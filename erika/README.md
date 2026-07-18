@@ -1,5 +1,14 @@
-# erika
+# erika Ver.2 完全版
 
-リポジトリ直下へ `erika` フォルダごとアップロードしてください。
+GitHub上の既存 `erika` フォルダを削除し、このZIP内の `erika-v2` フォルダの中身を
+新しい `erika` フォルダとしてアップロードしてください。
 
-ホーム画面からは `href="./erika/index.html"` で移動できます。
+構成:
+- index.html
+- style.css
+- Image/erika-profile.jpg
+
+ホームからのリンク:
+```html
+<a class="menu-button" href="./erika/index.html">
+```

@@ -270,17 +270,163 @@ select{width:100%;padding:13px;border:1px solid #d8c9bd;border-radius:13px;backg
 
 
 /* ==================================================
-   クリック不能修正 Ver.2.4.2
-   非表示中の場面画像オーバーレイが画面全体を覆わないようにする
+   スマホ表示修正 Ver.2.4.2
+   調弦カードを常に正方形に保つ
 ================================================== */
-.scene-overlay[hidden] {
-  display: none !important;
+
+html,
+body {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
 }
 
-.scene-overlay {
-  pointer-events: none;
+.app {
+  width: 100%;
+  max-width: 760px;
 }
 
-.scene-overlay.show {
-  pointer-events: auto;
+.page-header {
+  min-width: 0;
+}
+
+.page-header > div {
+  min-width: 0;
+}
+
+.page-header p {
+  overflow-wrap: anywhere;
+}
+
+/* 3枚を画面幅の中に収める */
+.tuning-mode-grid {
+  width: 100%;
+  max-width: 100%;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+/* ボタン自体を正方形にする */
+.image-choice {
+  width: 100%;
+  min-width: 0;
+  aspect-ratio: 1 / 1;
+  padding: 7px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  overflow: hidden;
+}
+
+/* 画像部分は残り領域に収める */
+.image-choice img {
+  width: 100%;
+  height: auto;
+  min-height: 0;
+  flex: 1 1 auto;
+  object-fit: contain;
+}
+
+/* 文字の高さを固定し、カードが縦長にならないようにする */
+.image-choice span {
+  flex: 0 0 auto;
+  margin-top: 3px;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+@media (max-width: 600px) {
+  .app {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+
+  .card {
+    padding: 14px;
+  }
+
+  .tuning-mode-grid {
+    gap: 7px;
+  }
+
+  .image-choice {
+    padding: 5px;
+    border-radius: 14px;
+  }
+
+  .image-choice span {
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 380px) {
+  .card {
+    padding: 12px;
+  }
+
+  .tuning-mode-grid {
+    gap: 5px;
+  }
+
+  .image-choice span {
+    font-size: 12px;
+  }
+}
+
+
+/* ==================================================
+   調弦カード正方形・強制修正 Ver.2.4.3
+================================================== */
+.tuning-mode-grid {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  gap: 8px !important;
+}
+
+.tuning-mode-grid .image-choice {
+  box-sizing: border-box !important;
+  width: 100% !important;
+  height: auto !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  aspect-ratio: 1 / 1 !important;
+  padding: 6px !important;
+  display: grid !important;
+  grid-template-rows: minmax(0, 1fr) auto !important;
+  align-items: stretch !important;
+  overflow: hidden !important;
+}
+
+.tuning-mode-grid .image-choice img {
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
+  object-fit: contain !important;
+}
+
+.tuning-mode-grid .image-choice span {
+  display: block !important;
+  margin: 2px 0 0 !important;
+  padding: 0 !important;
+  line-height: 1.15 !important;
+  white-space: nowrap !important;
+  font-size: clamp(11px, 3.2vw, 16px) !important;
+}
+
+@media (max-width: 420px) {
+  .tuning-mode-grid {
+    gap: 6px !important;
+  }
+
+  .tuning-mode-grid .image-choice {
+    padding: 4px !important;
+    border-radius: 13px !important;
+  }
 }

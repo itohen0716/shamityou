@@ -228,3 +228,15 @@ select{width:100%;padding:13px;border:1px solid #d8c9bd;border-radius:13px;backg
 .home-footer p {
   margin: 0;
 }
+
+
+/* トップ画面のシャミ画像 Ver.2.2 */
+.home-character {
+  width: 168px;
+  height: 168px;
+  object-fit: cover;
+  object-position: center;
+  padding: 0;
+  background: #ffffff;
+  border-radius: 36px;
+}

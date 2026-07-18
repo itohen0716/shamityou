@@ -1,8 +1,8 @@
-const CACHE_NAME="shian-shamisen-v2.1.0";
+const CACHE_NAME="shian-shamisen-v2.3.0";
 const FILES=[
   "./","./index.html","./tuning.html","./style.css","./app.js","./tuner.js",
   "./manifest.webmanifest",
-  "./images/icons/icon-192.png","./images/icons/icon-512.png","./images/icons/icon-512-maskable.png",
+  "./images/icons/icon-192.png","./images/icons/icon-512.png","./images/icons/icon-512-maskable.png","./images/home/shami-home.png",
   "./images/buttons/hon.png","./images/buttons/niage.png","./images/buttons/sansage.png",
   "./images/tuning/shami_go.png","./images/tuning/shami_next2.png",
   "./images/tuning/shami_next3.png","./images/tuning/shami_complete.png",

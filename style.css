@@ -267,3 +267,20 @@ select{width:100%;padding:13px;border:1px solid #d8c9bd;border-radius:13px;backg
   .image-choice img{height:150px;}
   .image-choice span{font-size:16px;}
 }
+
+
+/* ==================================================
+   クリック不能修正 Ver.2.4.2
+   非表示中の場面画像オーバーレイが画面全体を覆わないようにする
+================================================== */
+.scene-overlay[hidden] {
+  display: none !important;
+}
+
+.scene-overlay {
+  pointer-events: none;
+}
+
+.scene-overlay.show {
+  pointer-events: auto;
+}

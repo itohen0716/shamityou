@@ -4,11 +4,11 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#6f5145">
-  <title>調弦｜絲庵 ─ Shamisen ─</title>
+  <title>調弦設定｜絲庵 ─ Shamisen ─</title>
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="icon" href="./images/icons/icon-192.png">
   <link rel="apple-touch-icon" href="./images/icons/icon-192.png">
-  <link rel="stylesheet" href="./style.css?v=245">
+  <link rel="stylesheet" href="./style.css?v=250">
 </head>
 <body>
   <main class="app">
@@ -16,7 +16,10 @@
 
     <header class="page-header">
       <img src="./images/icons/icon-192.png" alt="" width="64" height="64">
-      <div><h1>調弦</h1><p>基準音を聴きながら、三味線の音を合わせます。</p></div>
+      <div>
+        <h1>調弦</h1>
+        <p>調弦・本数・合わせ方を選びます。</p>
+      </div>
     </header>
 
     <section class="card">
@@ -35,20 +38,6 @@
     </section>
 
     <section class="card">
-      <h2>合わせ方を選ぶ</h2>
-      <div class="practice-grid" role="group" aria-label="合わせ方">
-        <button type="button" class="practice-button" data-practice="sequence">
-          <strong>① 三弦を順番に合わせていく</strong>
-          <small>一の糸から三の糸まで自動で進みます</small>
-        </button>
-        <button type="button" class="practice-button" data-practice="single">
-          <strong>② 一音、一音合わせていく</strong>
-          <small>押した糸だけを合わせます</small>
-        </button>
-      </div>
-    </section>
-
-    <section class="card">
       <h2>一の糸の本数</h2>
       <select id="honCount" aria-label="一の糸の本数">
         <option value="1">1本</option><option value="2">2本</option>
@@ -62,39 +51,23 @@
     </section>
 
     <section class="card">
-      <h2>基準音</h2>
-      <div class="string-grid">
-        <button type="button" data-string="ichi"><strong>一の糸</strong><small id="hzIchi"></small></button>
-        <button type="button" data-string="ni"><strong>二の糸</strong><small id="hzNi"></small></button>
-        <button type="button" data-string="san"><strong>三の糸</strong><small id="hzSan"></small></button>
-      </div>
-      <button id="stopButton" class="stop-button" type="button">音と測定を止める</button>
-    </section>
-
-    <section class="card tuner-card">
-      <p id="micState" class="mic-state">合わせ方を選んでください</p>
-      <div class="meter" aria-label="音程メーター">
-        <span>低い</span><span>合っている</span><span>高い</span>
-        <div class="meter-track"><div id="meterNeedle" class="meter-needle"></div></div>
-      </div>
-      <p id="judgement" class="judgement">三味線を弾くと判定します</p>
-      <div class="shami-feedback">
-        <img id="expressionImage" src="./images/expressions/shami_listening.png" alt="シャミ">
-        <p id="shamiMessage">音を聴く準備をしています</p>
+      <h2>合わせ方を選ぶ</h2>
+      <div class="practice-grid" role="group" aria-label="合わせ方">
+        <button type="button" class="practice-button" data-practice="sequence">
+          <strong>① 三弦を順番に合わせていく</strong>
+          <small>一の糸から三の糸まで自動で進みます</small>
+        </button>
+        <button type="button" class="practice-button" data-practice="single">
+          <strong>② 一音、一音合わせていく</strong>
+          <small>押した糸だけを合わせます</small>
+        </button>
       </div>
     </section>
 
-    <div id="sceneOverlay" class="scene-overlay" hidden>
-      <img id="sceneImage" alt="">
-    </div>
-
-    <p class="note">
-      初回はマイク使用の確認が表示されます。「許可」を選んでください。
-      基準音が鳴っている間は、その音を判定しないよう測定を短時間休止します。
-    </p>
-    <p class="version">調弦 Ver.2.4.5</p>
+    <p class="note">合わせ方を押すと、調弦を行うページへ進みます。</p>
+    <p class="version">調弦設定 Ver.2.5.0</p>
   </main>
-  <script src="./tuner.js?v=245" defer></script>
-  <script src="./tuning-app.js?v=245" defer></script>
+
+  <script src="./setup.js?v=250" defer></script>
 </body>
 </html>

@@ -1,13 +1,15 @@
-const CACHE_NAME = "shian-shamisen-v2.4.5.0";
+const CACHE_NAME = "shian-shamisen-v2.5.1";
 
 const STATIC_FILES = [
   "./",
   "./index.html",
   "./tuning.html",
-  "./style.css?v=245",
-  "./home.js",
-  "./tuner.js?v=245",
-  "./tuning-app.js?v=245",
+  "./tuning-play.html",
+  "./style.css?v=250",
+  "./home.js?v=240",
+  "./setup.js?v=250",
+  "./tuner.js?v=250",
+  "./tuning-play.js?v=250",
   "./manifest.webmanifest",
   "./images/icons/icon-192.png",
   "./images/icons/icon-512.png",
@@ -28,9 +30,7 @@ const STATIC_FILES = [
 ];
 
 self.addEventListener("install", event => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(STATIC_FILES))
-  );
+  event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(STATIC_FILES)));
   self.skipWaiting();
 });
 
@@ -44,14 +44,11 @@ self.addEventListener("activate", event => {
 });
 
 self.addEventListener("fetch", event => {
-  if (event.request.method !== "GET") return;
-
+  if(event.request.method !== "GET") return;
   const url = new URL(event.request.url);
-  const isCode =
-    event.request.mode === "navigate" ||
-    /\.(?:html|css|js|webmanifest)$/.test(url.pathname);
+  const isCode = event.request.mode === "navigate" || /\.(?:html|css|js|webmanifest)$/.test(url.pathname);
 
-  if (isCode) {
+  if(isCode){
     event.respondWith(
       fetch(event.request)
         .then(response => {
@@ -65,13 +62,6 @@ self.addEventListener("fetch", event => {
   }
 
   event.respondWith(
-    caches.match(event.request).then(cached => {
-      if (cached) return cached;
-      return fetch(event.request).then(response => {
-        const copy = response.clone();
-        caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy));
-        return response;
-      });
-    })
+    caches.match(event.request).then(cached => cached || fetch(event.request))
   );
 });

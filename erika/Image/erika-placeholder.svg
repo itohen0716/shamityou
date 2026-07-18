@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="800" viewBox="0 0 800 800" role="img" aria-labelledby="title desc">
+  <title id="title">染行エリカ先生の写真差し替え用画像</title>
+  <desc id="desc">この画像を実際のプロフィール写真に差し替えて使用します。</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fff3e8"/>
+      <stop offset="1" stop-color="#efd3c5"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="800" rx="120" fill="url(#bg)"/>
+  <circle cx="400" cy="315" r="145" fill="#ffffff" opacity="0.9"/>
+  <path d="M178 690c26-150 111-231 222-231s196 81 222 231" fill="#ffffff" opacity="0.9"/>
+  <text x="400" y="745" text-anchor="middle" fill="#9e4f45" font-size="34" font-family="sans-serif">
+    プロフィール画像
+  </text>
+</svg>

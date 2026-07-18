@@ -1,36 +1,87 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <meta name="theme-color" content="#6f5145">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#795548">
   <title>絲庵 ─ Shamisen ─</title>
   <link rel="manifest" href="./manifest.webmanifest">
-  <link rel="icon" href="./images/icons/icon-192.png">
+  <link rel="icon" href="./images/icons/icon-192.png" sizes="192x192">
   <link rel="apple-touch-icon" href="./images/icons/icon-192.png">
   <link rel="stylesheet" href="./style.css">
 </head>
-<body>
-  <main class="home">
-    <header class="hero">
-      <img src="./images/icons/icon-192.png" class="hero-icon" alt="">
-      <div>
-        <p class="eyebrow">絲庵</p>
-        <h1>─ Shamisen ─</h1>
-        <p>シャミと一緒に、今日の練習を始めましょう。</p>
-      </div>
+<body class="home-body">
+  <main class="home-app">
+    <header class="home-header">
+      <img
+        class="home-character"
+        src="./images/icons/icon-512.png"
+        alt="三味線を持つ黒猫のシャミ"
+        width="168"
+        height="168"
+      >
+
+      <p class="brand-name">絲庵</p>
+      <h1 class="home-title">─ Shamisen ─</h1>
+
+      <p class="home-message">
+        シャミと一緒に、今日の練習を始めましょう。
+      </p>
     </header>
 
-    <nav class="home-menu" aria-label="メニュー">
-      <a class="menu-card enabled" href="./tuning.html">
-        <strong>調弦</strong>
-        <span>先生の基準音を聴きながら合わせます</span>
+    <nav class="home-menu" aria-label="練習メニュー">
+      <a class="menu-button active-menu" href="./tuning.html">
+        <span class="menu-icon">♪</span>
+        <span class="menu-text">
+          <strong>調弦</strong>
+          <small>本調子・二上り・三下り</small>
+        </span>
+        <span class="menu-arrow" aria-hidden="true">›</span>
       </a>
-      <div class="menu-card disabled"><strong>耳を育てる</strong><span>準備中</span></div>
-      <div class="menu-card disabled"><strong>メトロノーム</strong><span>準備中</span></div>
+
+      <button class="menu-button disabled-menu" type="button" disabled>
+        <span class="menu-icon">♬</span>
+        <span class="menu-text">
+          <strong>耳を育てる</strong>
+          <small>準備中</small>
+        </span>
+      </button>
+
+      <button class="menu-button disabled-menu" type="button" disabled>
+        <span class="menu-icon">♩</span>
+        <span class="menu-text">
+          <strong>メトロノーム</strong>
+          <small>準備中</small>
+        </span>
+      </button>
+
+      <button class="menu-button disabled-menu" type="button" disabled>
+        <span class="menu-icon">●</span>
+        <span class="menu-text">
+          <strong>録音・再生</strong>
+          <small>準備中</small>
+        </span>
+      </button>
+
+      <button class="menu-button disabled-menu" type="button" disabled>
+        <span class="menu-icon">✎</span>
+        <span class="menu-text">
+          <strong>練習記録</strong>
+          <small>準備中</small>
+        </span>
+      </button>
     </nav>
-    <p class="version">Shamisen Ver.2.0</p>
+
+    <button type="button" class="install-button" id="installButton" hidden>
+      ホーム画面にインストール
+    </button>
+
+    <footer class="home-footer">
+      <p>絲庵 ─ Shamisen ─</p>
+      <p>Ver.2.1</p>
+    </footer>
   </main>
+
   <script src="./app.js" defer></script>
 </body>
 </html>

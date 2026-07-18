@@ -68,3 +68,163 @@ select{width:100%;padding:13px;border:1px solid #d8c9bd;border-radius:13px;backg
   .string-grid{gap:6px}
   .string-grid button{padding:8px 4px}
 }
+
+
+/* ==================================================
+   ホーム画面 Ver.2.1
+   ユーザー指定のレイアウト
+================================================== */
+.home-body {
+  min-width: 320px;
+  min-height: 100vh;
+  margin: 0;
+  background: linear-gradient(180deg, #fffaf0 0%, #f6f0e7 100%);
+}
+
+.home-app {
+  width: min(100%, 520px);
+  min-height: 100vh;
+  margin: 0 auto;
+  padding:
+    max(24px, env(safe-area-inset-top))
+    18px
+    max(30px, env(safe-area-inset-bottom));
+}
+
+.home-header {
+  margin-bottom: 26px;
+  text-align: center;
+}
+
+.home-character {
+  width: 168px;
+  height: 168px;
+  object-fit: cover;
+  border-radius: 36px;
+  box-shadow: 0 8px 24px rgba(73, 49, 35, 0.16);
+}
+
+.brand-name {
+  margin: 18px 0 0;
+  color: #4e342e;
+  font-family: serif;
+  font-size: 34px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-indent: 0.18em;
+}
+
+.home-title {
+  margin: 4px 0 0;
+  color: #795548;
+  font-family: Georgia, serif;
+  font-size: 21px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+}
+
+.home-message {
+  margin: 16px 0 0;
+  color: #6f625b;
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.home-menu {
+  display: grid;
+  gap: 12px;
+}
+
+.menu-button {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: 74px;
+  padding: 12px 16px;
+  border: 1px solid rgba(121, 85, 72, 0.14);
+  border-radius: 17px;
+  background: #ffffff;
+  color: #342a25;
+  text-align: left;
+  text-decoration: none;
+  box-shadow: 0 4px 14px rgba(64, 46, 35, 0.08);
+}
+
+.active-menu {
+  border-color: rgba(121, 85, 72, 0.28);
+}
+
+.active-menu:active {
+  transform: scale(0.985);
+}
+
+.menu-icon {
+  display: grid;
+  flex: 0 0 46px;
+  width: 46px;
+  height: 46px;
+  place-items: center;
+  margin-right: 13px;
+  border-radius: 14px;
+  background: #f3ebe4;
+  color: #795548;
+  font-family: serif;
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.menu-text {
+  flex: 1;
+}
+
+.menu-text strong,
+.menu-text small {
+  display: block;
+}
+
+.menu-text strong {
+  font-size: 17px;
+}
+
+.menu-text small {
+  margin-top: 4px;
+  color: #8a7c74;
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.menu-arrow {
+  margin-left: 10px;
+  color: #9d8d84;
+  font-size: 30px;
+  font-weight: 300;
+}
+
+.disabled-menu {
+  cursor: default;
+  opacity: 0.56;
+}
+
+.install-button {
+  width: 100%;
+  min-height: 56px;
+  margin: 18px 0 16px;
+  border: 0;
+  border-radius: 14px;
+  background: #2f6f52;
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.home-footer {
+  margin-top: 24px;
+  color: #94877f;
+  font-size: 11px;
+  line-height: 1.6;
+  text-align: center;
+}
+
+.home-footer p {
+  margin: 0;
+}

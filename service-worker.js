@@ -1,4 +1,4 @@
-const CACHE_NAME="shian-shamisen-v2.0.1";
+const CACHE_NAME="shian-shamisen-v2.1.0";
 const FILES=[
   "./","./index.html","./tuning.html","./style.css","./app.js","./tuner.js",
   "./manifest.webmanifest",

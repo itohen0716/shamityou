@@ -274,8 +274,25 @@ async function registerSW(){
     try{await navigator.serviceWorker.register("./service-worker.js");}catch(e){console.warn(e);}
   }
 }
-document.addEventListener("DOMContentLoaded",()=>{
-  if(els.count){restore();bind();}
+function initializeTuningPage(){
+  try{
+    if(!els.count){
+      console.error("調弦画面の初期化に必要な要素が見つかりません。");
+      return;
+    }
+    restore();
+    bind();
+    document.documentElement.dataset.tuningReady="true";
+  }catch(error){
+    console.error("調弦画面の初期化に失敗しました:", error);
+    if(els.judgement) els.judgement.textContent="画面の初期化に失敗しました。再読み込みしてください。";
+  }
   registerSW();
-});
+}
+
+if(document.readyState==="loading"){
+  document.addEventListener("DOMContentLoaded",initializeTuningPage,{once:true});
+}else{
+  initializeTuningPage();
+}
 })();

@@ -8,7 +8,7 @@
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="icon" href="./images/icons/icon-192.png">
   <link rel="apple-touch-icon" href="./images/icons/icon-192.png">
-  <link rel="stylesheet" href="./style.css?v=243">
+  <link rel="stylesheet" href="./style.css?v=245">
 </head>
 <body>
   <main class="app">
@@ -22,13 +22,13 @@
     <section class="card">
       <h2>調弦を選ぶ</h2>
       <div class="tuning-mode-grid" role="group" aria-label="調弦">
-        <button class="image-choice active" data-tuning="hon" aria-pressed="true">
+        <button type="button" class="image-choice active" data-tuning="hon" aria-pressed="true">
           <img src="./images/buttons/hon.png" alt=""><span>本調子</span>
         </button>
-        <button class="image-choice" data-tuning="niage" aria-pressed="false">
+        <button type="button" class="image-choice" data-tuning="niage" aria-pressed="false">
           <img src="./images/buttons/niage.png" alt=""><span>二上り</span>
         </button>
-        <button class="image-choice" data-tuning="sansage" aria-pressed="false">
+        <button type="button" class="image-choice" data-tuning="sansage" aria-pressed="false">
           <img src="./images/buttons/sansage.png" alt=""><span>三下り</span>
         </button>
       </div>
@@ -37,11 +37,11 @@
     <section class="card">
       <h2>合わせ方を選ぶ</h2>
       <div class="practice-grid" role="group" aria-label="合わせ方">
-        <button class="practice-button" data-practice="sequence">
+        <button type="button" class="practice-button" data-practice="sequence">
           <strong>① 三弦を順番に合わせていく</strong>
           <small>一の糸から三の糸まで自動で進みます</small>
         </button>
-        <button class="practice-button" data-practice="single">
+        <button type="button" class="practice-button" data-practice="single">
           <strong>② 一音、一音合わせていく</strong>
           <small>押した糸だけを合わせます</small>
         </button>
@@ -64,9 +64,9 @@
     <section class="card">
       <h2>基準音</h2>
       <div class="string-grid">
-        <button data-string="ichi"><strong>一の糸</strong><small id="hzIchi"></small></button>
-        <button data-string="ni"><strong>二の糸</strong><small id="hzNi"></small></button>
-        <button data-string="san"><strong>三の糸</strong><small id="hzSan"></small></button>
+        <button type="button" data-string="ichi"><strong>一の糸</strong><small id="hzIchi"></small></button>
+        <button type="button" data-string="ni"><strong>二の糸</strong><small id="hzNi"></small></button>
+        <button type="button" data-string="san"><strong>三の糸</strong><small id="hzSan"></small></button>
       </div>
       <button id="stopButton" class="stop-button" type="button">音と測定を止める</button>
     </section>
@@ -92,9 +92,9 @@
       初回はマイク使用の確認が表示されます。「許可」を選んでください。
       基準音が鳴っている間は、その音を判定しないよう測定を短時間休止します。
     </p>
-    <p class="version">調弦 Ver.2.4.3</p>
+    <p class="version">調弦 Ver.2.4.5</p>
   </main>
-  <script src="./tuner.js?v=240" defer></script>
-  <script src="./tuning-app.js?v=240" defer></script>
+  <script src="./tuner.js?v=245" defer></script>
+  <script src="./tuning-app.js?v=245" defer></script>
 </body>
 </html>

@@ -430,3 +430,9 @@ body {
     border-radius: 13px !important;
   }
 }
+
+
+/* Ver.2.4.5：場面画像の非表示を確実にする */
+.scene-overlay[hidden] {
+  display: none !important;
+}

@@ -2,7 +2,7 @@
 "use strict";
 
 const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-const BASE = {1:174.61,2:164.81,3:155.56,4:146.83,5:138.59,6:130.81,7:123.47,8:116.54,9:110,10:103.83,11:98,12:92.5};
+const BASE = {1:155.56,2:146.83,3:138.59,4:130.81,5:123.47,6:116.54,7:110.00,8:103.83,9:98.00,10:92.50,11:87.31,12:82.41};
 const MODES = {
   hon:{label:"本調子", ratios:{ichi:1,ni:4/3,san:2}},
   niage:{label:"二上り",ratios:{ichi:1,ni:3/2,san:2}},

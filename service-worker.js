@@ -1,15 +1,15 @@
-const CACHE_NAME = "shian-shamisen-v2.5.1";
+const CACHE_NAME = "shian-shamisen-v2.5.2";
 
 const STATIC_FILES = [
   "./",
   "./index.html",
   "./tuning.html",
   "./tuning-play.html",
-  "./style.css?v=250",
+  "./style.css?v=252",
   "./home.js?v=240",
-  "./setup.js?v=250",
-  "./tuner.js?v=250",
-  "./tuning-play.js?v=250",
+  "./setup.js?v=252",
+  "./tuner.js?v=252",
+  "./tuning-play.js?v=252",
   "./manifest.webmanifest",
   "./images/icons/icon-192.png",
   "./images/icons/icon-512.png",

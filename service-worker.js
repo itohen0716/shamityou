@@ -1,4 +1,4 @@
-const CACHE_NAME = "shian-shamisen-v2.4.3.0";
+const CACHE_NAME = "shian-shamisen-v2.4.4.0";
 
 const STATIC_FILES = [
   "./",

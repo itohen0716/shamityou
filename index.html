@@ -4,14 +4,18 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#795548">
+
   <title>絲庵 ─ Shamisen ─</title>
+
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="icon" href="./images/icons/icon-192.png" sizes="192x192">
   <link rel="apple-touch-icon" href="./images/icons/icon-192.png">
-  <link rel="stylesheet" href="./style.css?v=243">
+  <link rel="stylesheet" href="./style.css?v=244">
 </head>
+
 <body class="home-body">
   <main class="home-app">
+
     <header class="home-header">
       <img
         class="home-character"
@@ -30,51 +34,93 @@
     </header>
 
     <nav class="home-menu" aria-label="練習メニュー">
+
+      <!-- 調弦 -->
       <a class="menu-button active-menu" href="./tuning.html">
-        <img src="./images/home/icon-tuning.png" alt="調弦">
+        <img
+          class="menu-image"
+          src="./images/home/icon-tuning.png"
+          alt=""
+        >
+
         <span class="menu-text">
           <strong>調弦</strong>
           <small>本調子・二上り・三下り</small>
         </span>
+
         <span class="menu-arrow" aria-hidden="true">›</span>
       </a>
 
+      <!-- 耳を育てる -->
       <a class="menu-button active-menu" href="./mimi-game/index.html">
-        <img src="./images/home/icon-ear.png" alt="耳を育てる">
+        <img
+          class="menu-image"
+          src="./images/home/icon-ear.png"
+          alt=""
+        >
+
         <span class="menu-text">
           <strong>耳を育てる</strong>
           <small>三味線耳を育てよう♪</small>
         </span>
+
         <span class="menu-arrow" aria-hidden="true">›</span>
       </a>
-      
-<button class="menu-button disabled-menu" type="button" disabled>
-        <span class="menu-icon">●</span>
+
+      <!-- 録音・再生 -->
+      <button
+        class="menu-button disabled-menu"
+        type="button"
+        disabled
+        aria-label="録音・再生 準備中"
+      >
+        <span class="menu-icon" aria-hidden="true">●</span>
+
         <span class="menu-text">
           <strong>録音・再生</strong>
           <small>準備中</small>
         </span>
       </button>
 
-      <button class="menu-button disabled-menu" type="button" disabled>
-       <img src="./images/home/icon-erika.png" alt="監修・協力">
+      <!-- 練習記録 -->
+      <button
+        class="menu-button disabled-menu"
+        type="button"
+        disabled
+        aria-label="練習記録 準備中"
+      >
+        <span class="menu-icon" aria-hidden="true">●</span>
+
         <span class="menu-text">
           <strong>練習記録</strong>
           <small>準備中</small>
         </span>
       </button>
 
-<a class="menu-button" href="./erika/index.html">
-    <span class="menu-icon">♪</span>
-    <span class="menu-text">
-        <strong>監修・協力：染行エリカ先生</strong>
-        <small>詳細ページ</small>
-    </span>
-    <span class="menu-arrow" aria-hidden="true">›</span>
-</a>
+      <!-- 監修・協力 -->
+      <a class="menu-button active-menu" href="./erika/index.html">
+        <img
+          class="menu-image"
+          src="./images/home/icon-erika.png"
+          alt=""
+        >
+
+        <span class="menu-text">
+          <strong>監修・協力</strong>
+          <small>染行エリカ先生</small>
+        </span>
+
+        <span class="menu-arrow" aria-hidden="true">›</span>
+      </a>
+
     </nav>
 
-    <button type="button" class="install-button" id="installButton" hidden>
+    <button
+      type="button"
+      class="install-button"
+      id="installButton"
+      hidden
+    >
       ホーム画面にインストール
     </button>
 
@@ -82,6 +128,7 @@
       <p>絲庵 ─ Shamisen ─</p>
       <p>Ver.2.5.2</p>
     </footer>
+
   </main>
 
   <script src="./home.js?v=240" defer></script>

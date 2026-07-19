@@ -9,19 +9,34 @@
 </head>
 <body>
   <main class="app-shell">
-    <header class="app-header">
-      <p class="brand">絲庵 Shian</p>
-      <h1>耳を育てる</h1>
-      <p class="subtitle">音をよく聴いて、楽しく耳を鍛えよう</p>
-    </header>
-
     <section id="screen-menu" class="screen active" aria-labelledby="menu-title">
-      <div class="hero">
-        <img src="images/shami_listening.png" alt="耳を澄ませるシャミ" class="hero-shami">
-        <div>
-          <h2 id="menu-title">ゲームを選んでね</h2>
-          <p>マイクは使いません。アプリの音を聴いて答えます。</p>
+      <a class="page-back-link" href="../index.html">‹ ホームへ戻る</a>
+
+      <header class="page-heading">
+        <img src="images/mimi-icon.png" alt="耳を澄ませるシャミのアイコン" class="page-icon">
+        <div class="page-heading-text">
+          <h1 id="menu-title">耳を育てる</h1>
+          <p>三味線耳を育てよう♪</p>
         </div>
+      </header>
+
+      <section class="ear-level-panel" aria-labelledby="ear-level-title">
+        <div class="ear-level-main">
+          <span id="ear-level-title">耳レベル</span>
+          <strong id="ear-level-label">Lv.1 初心者</strong>
+        </div>
+        <div class="level-progress" aria-hidden="true"><span id="level-progress-fill"></span></div>
+        <p id="level-progress-text">次のレベルまで、あと10問正解</p>
+      </section>
+
+      <div id="certification-banner" class="certification-banner hidden" aria-live="polite">
+        <strong>🎉 三味線耳認定！</strong>
+        <span>すべてのゲームをクリアしました</span>
+      </div>
+
+      <div class="menu-intro">
+        <h2>ゲームを選んでね</h2>
+        <p>マイクは使いません。アプリの音を聴いて答えます。</p>
       </div>
 
       <div class="game-menu">
@@ -44,7 +59,6 @@
         </button>
       </div>
 
-      <a class="home-link" href="../index.html">ホームへ戻る</a>
     </section>
 
     <section id="screen-tuning-select" class="screen" aria-labelledby="tuning-select-title">
@@ -171,6 +185,8 @@
         </div>
 
         <p id="result-message" class="result-message">よく頑張ったね♪</p>
+
+        <div id="result-certification" class="result-certification hidden">🎉 三味線耳認定！</div>
 
         <div class="result-actions">
           <button type="button" id="replay-button" class="primary-button">もう一度遊ぶ</button>

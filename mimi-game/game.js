@@ -14,6 +14,22 @@
     sansagari: { label: "三下り", intervals: [0, 5, 10] }
   };
 
+  const PROGRESS_KEY = "shian-ear-progress-v1";
+  const LEVELS = [
+    { level: 1, name: "初心者", minCorrect: 0 },
+    { level: 2, name: "見習い", minCorrect: 10 },
+    { level: 3, name: "中級", minCorrect: 30 },
+    { level: 4, name: "名人", minCorrect: 60 },
+    { level: 5, name: "達人", minCorrect: 100 }
+  ];
+  function loadProgress(){const fallback={totalCorrect:0,cleared:{"tuning-basic":false,"tuning-advanced":false,"match":false}};try{const saved=JSON.parse(localStorage.getItem(PROGRESS_KEY)||"null");if(!saved||typeof saved!=="object")return fallback;return{totalCorrect:Number.isFinite(saved.totalCorrect)?Math.max(0,saved.totalCorrect):0,cleared:{"tuning-basic":Boolean(saved.cleared?.["tuning-basic"]),"tuning-advanced":Boolean(saved.cleared?.["tuning-advanced"]),"match":Boolean(saved.cleared?.match)}}}catch{return fallback}}
+  const progress=loadProgress();
+  function saveProgress(){try{localStorage.setItem(PROGRESS_KEY,JSON.stringify(progress))}catch{}}
+  function getCurrentLevel(){return[...LEVELS].reverse().find(item=>progress.totalCorrect>=item.minCorrect)||LEVELS[0]}
+  function isCertified(){return Object.values(progress.cleared).every(Boolean)}
+  function updateProgressUI(){const current=getCurrentLevel();const currentIndex=LEVELS.findIndex(item=>item.level===current.level);const next=LEVELS[currentIndex+1];document.getElementById("ear-level-label").textContent=`Lv.${current.level} ${current.name}`;const fill=document.getElementById("level-progress-fill");const text=document.getElementById("level-progress-text");if(!next){fill.style.width="100%";text.textContent=`累計 ${progress.totalCorrect}問正解・最高レベル達成`}else{const range=next.minCorrect-current.minCorrect;const earned=progress.totalCorrect-current.minCorrect;fill.style.width=`${Math.max(0,Math.min(100,(earned/range)*100))}%`;text.textContent=`次のレベルまで、あと${Math.max(0,next.minCorrect-progress.totalCorrect)}問正解`}document.getElementById("certification-banner").classList.toggle("hidden",!isCertified())}
+  function recordGameResult(mode,score){progress.totalCorrect+=score;if(score>=5)progress.cleared[mode]=true;saveProgress();updateProgressUI()}
+
   const screens = [...document.querySelectorAll(".screen")];
   const tuningButtons = [...document.querySelectorAll("[data-tuning]")];
   const shiftButtons = [...document.querySelectorAll("[data-shift]")];
@@ -294,6 +310,7 @@
 
   function nextTuningQuestion() {
     if (state.tuning.question >= TOTAL_QUESTIONS) {
+      recordGameResult(state.tuning.mode === "basic" ? "tuning-basic" : "tuning-advanced", state.tuning.score);
       showResult(
         state.tuning.mode === "basic" ? "調子を当てる・基本" : "調子を当てる・応用",
         state.tuning.score,
@@ -423,6 +440,7 @@
 
   function nextMatchQuestion() {
     if (state.match.question >= TOTAL_QUESTIONS) {
+      recordGameResult("match", state.match.score);
       showResult("音を合わせる", state.match.score, state.match.bestStreak);
       return;
     }
@@ -455,6 +473,7 @@
       resultMessage.textContent = "ここから上達できるよ。一緒にもう一度挑戦しよう♪";
     }
 
+    document.getElementById("result-certification").classList.toggle("hidden", !isCertified());
     showScreen("screen-result");
   }
 
@@ -475,6 +494,7 @@
     const action = actionButton.dataset.action;
     if (action === "menu") {
       clearInterval(state.match.timerId);
+      updateProgressUI();
       showScreen("screen-menu");
     } else if (action === "open-tuning") {
       showScreen("screen-tuning-select");
@@ -513,4 +533,5 @@
   document.getElementById("replay-button").addEventListener("click", replayLastMode);
 
   createHonButtons();
+  updateProgressUI();
 })();

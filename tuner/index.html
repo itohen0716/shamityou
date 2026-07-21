@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#17191d">
+  <title>チューナー｜絲庵 ─ Shamisen ─</title>
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <main class="tuner-app">
+    <header class="app-header">
+      <div>
+        <p class="brand">絲庵</p>
+        <h1>チューナー</h1>
+      </div>
+      <button id="helpButton" class="icon-button" type="button" aria-label="使い方を表示">？</button>
+    </header>
+
+    <section class="settings-panel" aria-label="調弦設定">
+      <label class="field">
+        <span>一の糸</span>
+        <select id="baseStringSelect">
+          <option value="1">1本</option>
+          <option value="2">2本</option>
+          <option value="3">3本</option>
+          <option value="4">4本</option>
+          <option value="5">5本</option>
+          <option value="6" selected>6本</option>
+          <option value="7">7本</option>
+          <option value="8">8本</option>
+        </select>
+      </label>
+
+      <label class="field">
+        <span>調弦</span>
+        <select id="tuningSelect">
+          <option value="honchoshi">本調子</option>
+          <option value="niagari" selected>二上り</option>
+          <option value="sansagari">三下り</option>
+        </select>
+      </label>
+
+      <label class="field">
+        <span>合わせる糸</span>
+        <select id="stringSelect">
+          <option value="1">1弦</option>
+          <option value="2">2弦</option>
+          <option value="3">3弦</option>
+        </select>
+      </label>
+    </section>
+
+    <section class="meter-card" aria-live="polite">
+      <div class="frequency-row">
+        <span id="frequencyValue">--.-</span>
+        <span class="frequency-unit">Hz</span>
+      </div>
+
+      <div class="target-row">
+        <span>目標</span>
+        <strong id="targetNote">C♯3 / D♭3</strong>
+        <span id="targetFrequency">138.59 Hz</span>
+      </div>
+
+      <div class="meter" aria-label="音程メーター">
+        <div class="meter-scale" id="meterScale"></div>
+        <div class="center-zone" aria-hidden="true"></div>
+        <div class="needle" id="needle" aria-hidden="true"></div>
+      </div>
+
+      <div class="note-display">
+        <div id="detectedNote" class="note-name">--</div>
+        <div id="octaveValue" class="octave"></div>
+      </div>
+
+      <div id="guideText" class="guide-text">開始ボタンを押してください</div>
+      <div id="centValue" class="cent-value">-- cent</div>
+    </section>
+
+    <section class="controls">
+      <button id="startButton" class="primary-button" type="button">
+        <span class="mic-icon" aria-hidden="true">●</span>
+        マイクを開始
+      </button>
+      <button id="stopButton" class="secondary-button" type="button" disabled>停止</button>
+    </section>
+
+    <p id="statusText" class="status-text" role="status"></p>
+
+    <a class="home-link" href="../index.html">ホームへ戻る</a>
+  </main>
+
+  <dialog id="helpDialog">
+    <div class="dialog-content">
+      <h2>使い方</h2>
+      <ol>
+        <li>一の糸の本数と調弦を選びます。</li>
+        <li>合わせる糸を選びます。</li>
+        <li>「マイクを開始」を押して三味線の糸を鳴らします。</li>
+        <li>青なら音を上げ、赤なら音を下げます。中央の白で合っています。</li>
+      </ol>
+      <button id="closeHelpButton" class="secondary-button" type="button">閉じる</button>
+    </div>
+  </dialog>
+
+  <script src="./app.js"></script>
+</body>
+</html>

@@ -11,14 +11,11 @@
 
     const ctx = await engine.resume();
 
-    // 無音を短く再生して、iPhone・Android双方で音声利用を有効化します。
-    const oscillator = ctx.createOscillator();
-    const gain = ctx.createGain();
-    gain.gain.value = 0.00001;
-    oscillator.connect(gain);
-    gain.connect(ctx.destination);
-    oscillator.start();
-    oscillator.stop(ctx.currentTime + 0.03);
+    // ユーザー操作内で無音バッファを再生し、iOS・Androidの音声利用を有効化します。
+    const source = ctx.createBufferSource();
+    source.buffer = ctx.createBuffer(1, 1, ctx.sampleRate);
+    source.connect(ctx.destination);
+    source.start();
 
     sessionStorage.setItem("shian-audio-unlocked", "1");
   }

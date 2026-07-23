@@ -1,25 +1,15 @@
 (() => {
   "use strict";
-
-  // 作成済み対応表：
-  // 配列は [一の糸, 二の糸, 三の糸] の音番号です。
-  window.ShianTuningMap = Object.freeze({
-    hon: Object.freeze({
-      1:[1,6,13],   2:[2,7,14],   3:[3,8,15],   4:[4,9,16],
-      5:[5,10,17],  6:[6,11,18],  7:[7,12,19],  8:[8,13,20],
-      9:[9,14,21], 10:[10,15,22],11:[11,16,23],12:[12,17,24]
-    }),
-    niage: Object.freeze({
-      1:[1,8,13],   2:[2,9,14],   3:[3,10,15],  4:[4,11,16],
-      5:[5,12,17],  6:[6,13,18],  7:[7,14,19],  8:[8,15,20],
-      9:[9,16,21], 10:[10,17,22],11:[11,18,23],12:[12,19,24]
-    }),
-    sansage: Object.freeze({
-      1:[1,6,11],   2:[2,7,12],   3:[3,8,13],   4:[4,9,14],
-      5:[5,10,15],  6:[6,11,16],  7:[7,12,17],  8:[8,13,18],
-      9:[9,14,19], 10:[10,15,20],11:[11,16,21],12:[12,17,22]
+  const make = (second, third) => Object.freeze(Object.fromEntries(
+    Array.from({ length: 12 }, (_, i) => {
+      const n = i + 1;
+      return [n, Object.freeze([n, n + second, n + third])];
     })
+  ));
+  window.ShianTuningMap = Object.freeze({
+    hon: make(5, 12),
+    niage: make(7, 12),
+    sansage: make(5, 10)
   });
-
   window.ShianStringOrder = Object.freeze(["ichi", "ni", "san"]);
 })();

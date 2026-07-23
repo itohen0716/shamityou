@@ -1,33 +1,26 @@
 (() => {
   "use strict";
 
-  // ホーム画面内のアプリフレームで開かれた場合は、
-  // ホームで開始したWeb Audio APIをそのまま引き継ぎます。
-  try {
-    if (window.parent && window.parent !== window && window.parent.ShianAudioEngine) {
-      window.ShianAudioEngine = window.parent.ShianAudioEngine;
-      return;
-    }
-  } catch (_) {
-    // 単独で開いた場合は、このページ内で音声エンジンを作成します。
+  const root = (() => {
+    try { return window.top && window.top.location.origin === location.origin ? window.top : window; }
+    catch (_) { return window; }
+  })();
+  if (root !== window && root.ShianAudioEngine) {
+    window.ShianAudioEngine = root.ShianAudioEngine;
+    return;
   }
 
-
   const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-  const AUDIO_URL = "./sounds/teacher-1to12-octave.wav";
-  const FADE_SECONDS = 0.018;
-
-  let context = null;
-  let buffer = null;
-  let loadingPromise = null;
-  let activeSource = null;
-  let activeGain = null;
+  const scriptUrl = document.currentScript?.src || new URL("./audio-engine.js", root.document.baseURI).href;
+  const AUDIO_URL = new URL("./sounds/teacher-1to12-octave.wav", scriptUrl).href;
+  const active = new Set();
+  let context;
+  let teacherBuffer;
+  let loadPromise;
 
   function getContext() {
-    if (!AudioContextClass) {
-      throw new Error("このブラウザはWeb Audio APIに対応していません。");
-    }
-    if (!context) context = new AudioContextClass();
+    if (!AudioContextClass) throw new Error("このブラウザーはWeb Audio APIに対応していません。");
+    if (!context || context.state === "closed") context = new AudioContextClass({ latencyHint: "interactive" });
     return context;
   }
 
@@ -37,92 +30,88 @@
     return ctx;
   }
 
-  async function load() {
-    if (buffer) return buffer;
-    if (loadingPromise) return loadingPromise;
-
-    loadingPromise = (async () => {
+  function load() {
+    if (teacherBuffer) return Promise.resolve(teacherBuffer);
+    if (loadPromise) return loadPromise;
+    loadPromise = (async () => {
       const ctx = await resume();
-      const response = await fetch(AUDIO_URL);
-      if (!response.ok) throw new Error("基準音源を読み込めません。");
-      buffer = await ctx.decodeAudioData(await response.arrayBuffer());
-      return buffer;
-    })();
-
-    try {
-      return await loadingPromise;
-    } finally {
-      loadingPromise = null;
-    }
+      const response = await fetch(AUDIO_URL, { cache: "force-cache" });
+      if (!response.ok) throw new Error(`先生音源を読み込めませんでした (${response.status})`);
+      teacherBuffer = await ctx.decodeAudioData(await response.arrayBuffer());
+      return teacherBuffer;
+    })().catch((error) => {
+      loadPromise = null;
+      throw error;
+    });
+    return loadPromise;
   }
 
-  function stop(fade = true) {
-    if (!activeSource || !context) return;
-
-    const source = activeSource;
-    const gain = activeGain;
-    activeSource = null;
-    activeGain = null;
-
+  function stopVoice(voice, fadeSeconds = 0.02) {
+    if (!voice || voice.stopped) return;
+    voice.stopped = true;
+    active.delete(voice);
+    const now = voice.context.currentTime;
     try {
-      if (fade && gain) {
-        const now = context.currentTime;
-        gain.gain.cancelScheduledValues(now);
-        gain.gain.setValueAtTime(Math.max(gain.gain.value, 0.0001), now);
-        gain.gain.linearRampToValueAtTime(0.0001, now + FADE_SECONDS);
-        source.stop(now + FADE_SECONDS + 0.005);
-      } else {
-        source.stop();
-      }
-    } catch (_) {
-      // すでに停止済みの場合は何もしません。
-    }
+      voice.gain.gain.cancelScheduledValues(now);
+      voice.gain.gain.setTargetAtTime(0.0001, now, Math.max(0.001, fadeSeconds / 3));
+      voice.source.stop(now + fadeSeconds);
+    } catch (_) {}
   }
 
-  async function play(noteNumber) {
-    const segments = window.ShianSoundSegments;
-    const segment = segments && segments[noteNumber];
-    if (!segment) throw new Error(`音番号${noteNumber}の区間がありません。`);
+  function stopAll(fadeSeconds = 0.02) {
+    [...active].forEach((voice) => stopVoice(voice, fadeSeconds));
+  }
+
+  async function playSegment(segmentOrNumber, options = {}) {
+    const segment = typeof segmentOrNumber === "number"
+      ? window.ShianSoundSegments?.[segmentOrNumber]
+      : segmentOrNumber;
+    if (!segment || !Number.isFinite(segment.start) || !Number.isFinite(segment.end)) {
+      throw new Error("音源区間が見つかりません。");
+    }
 
     const ctx = await resume();
     const audioBuffer = await load();
-    stop(false);
+    if (options.exclusive !== false) stopAll(0.01);
 
-    const duration = Math.max(0.05, segment.end - segment.start);
+    const offset = Math.max(0, segment.start);
+    const sourceDuration = Math.max(0.05, Math.min(segment.end, audioBuffer.duration) - offset);
+    const rate = Math.max(0.25, Math.min(4, Number(options.playbackRate) || 1));
+    const outputDuration = sourceDuration / rate;
+    const startDelay = Math.max(0, Number(options.delay) || 0);
+    const startAt = ctx.currentTime + startDelay;
+    const fade = Math.min(0.018, outputDuration / 5);
     const source = ctx.createBufferSource();
     const gain = ctx.createGain();
+    const voice = { source, gain, context: ctx, stopped: false };
 
     source.buffer = audioBuffer;
-    source.connect(gain);
-    gain.connect(ctx.destination);
-
-    const now = ctx.currentTime;
-    const fade = Math.min(FADE_SECONDS, duration / 4);
-
-    gain.gain.setValueAtTime(0.0001, now);
-    gain.gain.linearRampToValueAtTime(0.92, now + fade);
-    gain.gain.setValueAtTime(0.92, now + Math.max(fade, duration - fade));
-    gain.gain.linearRampToValueAtTime(0.0001, now + duration);
-
-    activeSource = source;
-    activeGain = gain;
-
+    source.playbackRate.value = rate;
+    source.connect(gain).connect(ctx.destination);
+    gain.gain.setValueAtTime(0.0001, startAt);
+    gain.gain.linearRampToValueAtTime(Number(options.volume) || 0.9, startAt + fade);
+    gain.gain.setValueAtTime(Number(options.volume) || 0.9, startAt + Math.max(fade, outputDuration - fade));
+    gain.gain.linearRampToValueAtTime(0.0001, startAt + outputDuration);
     source.addEventListener("ended", () => {
-      if (activeSource === source) {
-        activeSource = null;
-        activeGain = null;
-      }
+      active.delete(voice);
+      try { source.disconnect(); gain.disconnect(); } catch (_) {}
     }, { once: true });
+    active.add(voice);
+    source.start(startAt, offset, sourceDuration);
 
-    source.start(now, segment.start, duration);
-    return duration;
+    return Object.freeze({
+      duration: outputDuration,
+      stop: () => stopVoice(voice),
+      ended: new Promise((resolve) => source.addEventListener("ended", resolve, { once: true }))
+    });
   }
 
-  window.ShianAudioEngine = Object.freeze({
-    load,
-    play,
-    stop,
-    resume,
-    getContext
-  });
+  async function play(noteNumber, options) {
+    const voice = await playSegment(noteNumber, options);
+    return voice.duration;
+  }
+
+  const api = Object.freeze({ getContext, resume, load, play, playSegment, stop: stopAll, stopAll });
+  root.ShianAudioEngine = api;
+  window.ShianAudioEngine = api;
 })();

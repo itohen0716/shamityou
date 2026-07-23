@@ -207,8 +207,7 @@
         }
       });
 
-      audioContext = new AudioContext();
-      await audioContext.resume();
+      audioContext = await window.ShianAudioEngine.resume();
 
       analyser = audioContext.createAnalyser();
       analyser.fftSize = 4096;
@@ -245,14 +244,6 @@
         track.stop();
       }
       mediaStream = null;
-    }
-
-    if (audioContext && audioContext.state !== "closed") {
-      try {
-        await audioContext.close();
-      } catch (error) {
-        console.error("AudioContextの終了に失敗しました。", error);
-      }
     }
 
     audioContext = null;

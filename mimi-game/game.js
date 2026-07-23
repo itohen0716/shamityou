@@ -71,6 +71,22 @@
   }
 
   function ensureAudio() {
+    try {
+      if (
+        window.parent &&
+        window.parent !== window &&
+        window.parent.ShianAudioEngine
+      ) {
+        audioContext = window.parent.ShianAudioEngine.getContext();
+        if (audioContext.state === "suspended") {
+          window.parent.ShianAudioEngine.resume();
+        }
+        return audioContext;
+      }
+    } catch (_) {
+      // 単独表示時は、このページ内のAudioContextを使用します。
+    }
+
     const AudioCtx = window.AudioContext || window.webkitAudioContext;
     if (!AudioCtx) {
       throw new Error("このブラウザでは音声再生に対応していません。");

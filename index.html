@@ -10,7 +10,7 @@
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="icon" href="./images/icons/icon-192.png" sizes="192x192">
   <link rel="apple-touch-icon" href="./images/icons/icon-192.png">
-  <link rel="stylesheet" href="./style.css?v=244">
+  <link rel="stylesheet" href="./style.css?v=270">
 </head>
 
 <body class="home-body">
@@ -36,7 +36,7 @@
     <nav class="home-menu" aria-label="練習メニュー">
 
       <!-- 調弦 -->
-      <a class="menu-button active-menu" href="./tuning.html">
+      <a class="menu-button active-menu audio-route" href="./tuning.html" data-app-route="./tuning.html">
         <img
           class="menu-image"
           src="./images/home/icon-tuning.png"
@@ -52,7 +52,7 @@
       </a>
 
       <!-- 耳を育てる -->
-      <a class="menu-button active-menu" href="./mimi-game/index.html">
+      <a class="menu-button active-menu audio-route" href="./mimi-game/index.html" data-app-route="./mimi-game/index.html">
         <img
           class="menu-image"
           src="./images/home/icon-ear.png"
@@ -127,11 +127,22 @@
 
     <footer class="home-footer">
       <p>絲庵 ─ Shamisen ─</p>
-      <p>Ver.2.5.2</p>
+      <p>Ver.2.7.0</p>
     </footer>
 
   </main>
 
-  <script src="./home.js?v=240" defer></script>
+  <section id="appFrameLayer" class="app-frame-layer" hidden aria-label="絲庵 アプリ画面">
+    <iframe
+      id="appFrame"
+      class="app-frame"
+      title="絲庵 アプリ画面"
+      allow="microphone; autoplay"
+    ></iframe>
+  </section>
+
+  <script src="./sound-segments.js?v=270"></script>
+  <script src="./audio-engine.js?v=270"></script>
+  <script src="./home.js?v=270" defer></script>
 </body>
 </html>

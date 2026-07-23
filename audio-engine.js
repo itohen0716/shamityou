@@ -1,6 +1,18 @@
 (() => {
   "use strict";
 
+  // ホーム画面内のアプリフレームで開かれた場合は、
+  // ホームで開始したWeb Audio APIをそのまま引き継ぎます。
+  try {
+    if (window.parent && window.parent !== window && window.parent.ShianAudioEngine) {
+      window.ShianAudioEngine = window.parent.ShianAudioEngine;
+      return;
+    }
+  } catch (_) {
+    // 単独で開いた場合は、このページ内で音声エンジンを作成します。
+  }
+
+
   const AudioContextClass = window.AudioContext || window.webkitAudioContext;
   const AUDIO_URL = "./sounds/teacher-1to12-octave.wav";
   const FADE_SECONDS = 0.018;

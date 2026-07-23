@@ -189,10 +189,18 @@ async function handleMatched(){
 }
 async function startSession(stringName){
   try{
-    await window.ShianAudioEngine.load();
-    await ensureMicrophone();
-    running=true;
     activeString=stringName;
+    els.mic.textContent="音源とマイクを準備しています";
+    setJudgement("少しお待ちください");
+
+    // ホーム画面で開始したAudioContextを引き継ぎます。
+    await window.ShianAudioEngine.resume();
+    await Promise.all([
+      window.ShianAudioEngine.load(),
+      ensureMicrophone()
+    ]);
+
+    running=true;
     stableFrames=0;
     setStringButtons();
     startReferenceLoop();
@@ -218,10 +226,10 @@ function stopSession(reset=true){
 }
 function bind(){
   document.querySelectorAll("[data-string]").forEach(btn=>{
-    btn.addEventListener("click",()=>{
+    btn.addEventListener("click",async()=>{
       if(practice!=="single") return;
       stopSession(false);
-      startSession(btn.dataset.string);
+      await startSession(btn.dataset.string);
     });
   });
   els.stop.addEventListener("click",()=>stopSession());
@@ -232,6 +240,8 @@ async function initialize(){
 
   if(practice==="sequence"){
     sequenceIndex=0;
+    activeString="ichi";
+    setStringButtons();
     await showScene("go",2100);
     await startSession("ichi");
   }else{

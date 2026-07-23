@@ -1,7 +1,6 @@
 (() => {
 "use strict";
 
-const AudioContextClass = window.AudioContext || window.webkitAudioContext;
 const BASE = {1:155.56,2:146.83,3:138.59,4:130.81,5:123.47,6:116.54,7:110.00,8:103.83,9:98.00,10:92.50,11:87.31,12:82.41};
 const MODES = {
   hon:{label:"本調子", ratios:{ichi:1,ni:4/3,san:2}},
@@ -22,18 +21,17 @@ const EXPRESSIONS={
   retry:"./images/expressions/shami_retry.png"
 };
 
-const SAMPLE_STARTS=[3.36,6.80,10.24,13.66,17.10,20.52,23.94,27.38,30.80,34.22,37.66,41.08,
-44.52,47.94,51.38,54.80,58.24,61.66,65.10,68.52,71.94,75.36,78.80,82.20];
-
 const tuning=localStorage.getItem("shian-tuning") || "hon";
 const practice=localStorage.getItem("shian-practice") || "sequence";
 const count=Number(localStorage.getItem("shian-count") || 6);
-const mode=MODES[tuning];
-const base=BASE[count];
+const mode=MODES[tuning] || MODES.hon;
+const base=BASE[count] || BASE[6];
 const notes={ichi:base,ni:base*mode.ratios.ni,san:base*mode.ratios.san};
+const noteNumbers=(window.ShianTuningMap[tuning] || window.ShianTuningMap.hon)[count];
+const stringIndex={ichi:0,ni:1,san:2};
 
 let activeString=null, sequenceIndex=0;
-let audioContext=null, teacherBuffer=null, mediaStream=null, analyser=null, micSource=null;
+let mediaStream=null, analyser=null, micSource=null;
 let loopTimer=null, rafId=null, suppressUntil=0, stableFrames=0, running=false, changing=false;
 
 const $=id=>document.getElementById(id);
@@ -43,6 +41,9 @@ const els={
   expression:$("expressionImage"),message:$("shamiMessage"),overlay:$("sceneOverlay"),scene:$("sceneImage")
 };
 
+function currentNoteNumber(){
+  return noteNumbers[stringIndex[activeString]];
+}
 function renderSettings(){
   els.summary.textContent=`${count}本・${mode.label}／${practice==="sequence"?"三弦を順番に合わせる":"一音ずつ合わせる"}`;
   els.hzIchi.textContent=`${notes.ichi.toFixed(2)} Hz`;
@@ -77,56 +78,31 @@ async function showScene(key,duration=1800){
   await new Promise(r=>setTimeout(r,260));
   els.overlay.hidden=true;
 }
-async function ensureAudio(){
-  if(!AudioContextClass) throw new Error("このブラウザは音声機能に対応していません。");
-  if(!audioContext) audioContext=new AudioContextClass();
-  if(audioContext.state==="suspended") await audioContext.resume();
-  if(!teacherBuffer){
-    const response=await fetch("./sounds/teacher-1to12-octave.wav");
-    if(!response.ok) throw new Error("基準音源を読み込めません。");
-    teacherBuffer=await audioContext.decodeAudioData(await response.arrayBuffer());
-  }
-}
-function chooseSample(targetHz){
-  const candidates=[];
-  for(let i=0;i<12;i++){
-    candidates.push({index:i,frequency:BASE[i+1]});
-    candidates.push({index:i+12,frequency:BASE[i+1]*2});
-  }
-  let best=candidates[0],bestDistance=Infinity;
-  for(const c of candidates){
-    const distance=Math.abs(1200*Math.log2(targetHz/c.frequency));
-    if(distance<bestDistance){best=c;bestDistance=distance;}
-  }
-  return {start:SAMPLE_STARTS[best.index],rate:targetHz/best.frequency};
-}
 async function playTeacherOnce(){
   if(!running || !activeString) return;
-  await ensureAudio();
-  const sample=chooseSample(notes[activeString]);
-  const source=audioContext.createBufferSource();
-  const gain=audioContext.createGain();
-  source.buffer=teacherBuffer;
-  source.playbackRate.value=sample.rate;
-  gain.gain.value=.9;
-  source.connect(gain).connect(audioContext.destination);
-  suppressUntil=performance.now()+1150;
-  source.start(0,sample.start,1.35);
+  const duration=await window.ShianAudioEngine.play(currentNoteNumber());
+  suppressUntil=performance.now()+(duration*1000)+250;
 }
 function startReferenceLoop(){
   stopReferenceLoop();
-  playTeacherOnce();
-  loopTimer=setInterval(playTeacherOnce,3000);
+  playTeacherOnce().catch(handleAudioError);
+  loopTimer=setInterval(()=>playTeacherOnce().catch(handleAudioError),3000);
 }
 function stopReferenceLoop(){
   if(loopTimer){clearInterval(loopTimer);loopTimer=null;}
+  window.ShianAudioEngine.stop();
+}
+function handleAudioError(error){
+  console.error(error);
+  setJudgement("基準音を再生できません");
+  setExpression("retry","画面を一度タップして、もう一度試してください");
 }
 async function ensureMicrophone(){
   if(mediaStream) return;
   mediaStream=await navigator.mediaDevices.getUserMedia({
     audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:false}
   });
-  await ensureAudio();
+  const audioContext=await window.ShianAudioEngine.resume();
   analyser=audioContext.createAnalyser();
   analyser.fftSize=4096;
   micSource=audioContext.createMediaStreamSource(mediaStream);
@@ -134,6 +110,7 @@ async function ensureMicrophone(){
 }
 function startPitchLoop(){
   cancelAnimationFrame(rafId);
+  const audioContext=window.ShianAudioEngine.getContext();
   const data=new Float32Array(analyser.fftSize);
   const tick=()=>{
     if(!running) return;
@@ -212,7 +189,7 @@ async function handleMatched(){
 }
 async function startSession(stringName){
   try{
-    await ensureAudio();
+    await window.ShianAudioEngine.load();
     await ensureMicrophone();
     running=true;
     activeString=stringName;

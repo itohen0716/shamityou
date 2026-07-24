@@ -111,7 +111,21 @@
     return voice.duration;
   }
 
-  const api = Object.freeze({ getContext, resume, load, play, playSegment, stop: stopAll, stopAll });
+  async function playFrequency(frequency, options = {}) {
+    const target = Number(frequency);
+    const master = window.ShianTuningMaster;
+    if (!Number.isFinite(target) || !master) throw new Error("調弦データから音を取得できません。");
+    const sources = master.entries.filter((entry) => entry.mode === "hon");
+    const source = sources.reduce((best, entry) =>
+      Math.abs(Math.log2(target / entry.frequencies[0])) < Math.abs(Math.log2(target / best.frequencies[0])) ? entry : best
+    );
+    return playSegment(source.count, {
+      ...options,
+      playbackRate: (Number(options.playbackRate) || 1) * target / source.frequencies[0]
+    });
+  }
+
+  const api = Object.freeze({ getContext, resume, load, play, playSegment, playFrequency, stop: stopAll, stopAll });
   root.ShianAudioEngine = api;
   window.ShianAudioEngine = api;
 })();

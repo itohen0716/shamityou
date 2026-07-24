@@ -1,12 +1,6 @@
 (() => {
   "use strict";
 
-  const BASE = {1:174.61,2:164.81,3:155.56,4:146.83,5:138.59,6:130.81,7:123.47,8:116.54,9:110,10:103.83,11:98,12:92.5};
-  const MODES = {
-    hon: { label: "本調子", ratios: [1, 4/3, 2] },
-    niage: { label: "二上り", ratios: [1, 3/2, 2] },
-    sansage: { label: "三下り", ratios: [1, 4/3, 16/9] }
-  };
   const ORDER = ["ichi", "ni", "san"];
   const LABELS = { ichi: "一の糸", ni: "二の糸", san: "三の糸" };
   const SCENES = { go:"shami_go.png", next2:"shami_next2.png", next3:"shami_next3.png", complete:"shami_complete.png" };
@@ -21,9 +15,9 @@
   const tuning = localStorage.getItem("shian-tuning") || "hon";
   const practice = localStorage.getItem("shian-practice") || "sequence";
   const count = Math.max(1, Math.min(12, Number(localStorage.getItem("shian-count")) || 6));
-  const mode = MODES[tuning] || MODES.hon;
-  const notes = mode.ratios.map((ratio) => BASE[count] * ratio);
-  const noteNumbers = (window.ShianTuningMap[tuning] || window.ShianTuningMap.hon)[count];
+  const master = window.ShianTuningMaster;
+  const target = master.get(count, tuning);
+  const notes = target.frequencies;
 
   let activeIndex = -1;
   let stream, analyser, micSource, rafId, referenceTimer;
@@ -55,7 +49,7 @@
   }
   async function playReference() {
     if (!running || activeIndex < 0) return;
-    const voice = await window.ShianAudioEngine.playSegment(noteNumbers[activeIndex]);
+    const voice = await window.ShianAudioEngine.playFrequency(notes[activeIndex]);
     suppressUntil = performance.now() + voice.duration * 1000 + 250;
   }
   function stopReference() {
@@ -187,8 +181,8 @@
     setFeedback("retry", "マイクの許可と音量を確認してください", error.message || "開始できませんでした");
   }
   async function initialize() {
-    els.summary.textContent = `${count}本・${mode.label}・${practice === "sequence" ? "1→2→3 自動進行" : "一音ずつ"}`;
-    els.hz.forEach((element, index) => { element.textContent = `${notes[index].toFixed(2)} Hz`; });
+    els.summary.textContent = `${count}本・${target.label}・${practice === "sequence" ? "1→2→3 自動進行" : "一音ずつ"}`;
+    els.hz.forEach((element, index) => { element.textContent = master.formatHz(notes[index]); });
     document.querySelectorAll("[data-string]").forEach((button, index) => button.addEventListener("click", () => {
       if (practice === "single") { stopSession(false); startSession(index); }
     }));

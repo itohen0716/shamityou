@@ -1,0 +1,407 @@
+{
+  "version": "4.0.1",
+  "source": "tuning-master.xlsx",
+  "columns": [
+    "一の糸",
+    "二の糸",
+    "三の糸"
+  ],
+  "entries": [
+    {
+      "count": 1,
+      "noteName": "A",
+      "mode": "hon",
+      "label": "本調子",
+      "frequencies": [
+        220,
+        293.7,
+        440
+      ]
+    },
+    {
+      "count": 1,
+      "noteName": "A",
+      "mode": "niage",
+      "label": "二上り",
+      "frequencies": [
+        220,
+        329.6,
+        440
+      ]
+    },
+    {
+      "count": 1,
+      "noteName": "A",
+      "mode": "sansage",
+      "label": "三下り",
+      "frequencies": [
+        220,
+        293.7,
+        392
+      ]
+    },
+    {
+      "count": 2,
+      "noteName": "A# (Bb)",
+      "mode": "hon",
+      "label": "本調子",
+      "frequencies": [
+        233.1,
+        311.1,
+        466.2
+      ]
+    },
+    {
+      "count": 2,
+      "noteName": "A# (Bb)",
+      "mode": "niage",
+      "label": "二上り",
+      "frequencies": [
+        233.1,
+        349.2,
+        466.2
+      ]
+    },
+    {
+      "count": 2,
+      "noteName": "A# (Bb)",
+      "mode": "sansage",
+      "label": "三下り",
+      "frequencies": [
+        233.1,
+        311.1,
+        415.3
+      ]
+    },
+    {
+      "count": 3,
+      "noteName": "B",
+      "mode": "hon",
+      "label": "本調子",
+      "frequencies": [
+        246.9,
+        329.6,
+        493.9
+      ]
+    },
+    {
+      "count": 3,
+      "noteName": "B",
+      "mode": "niage",
+      "label": "二上り",
+      "frequencies": [
+        246.9,
+        370,
+        493.9
+      ]
+    },
+    {
+      "count": 3,
+      "noteName": "B",
+      "mode": "sansage",
+      "label": "三下り",
+      "frequencies": [
+        246.9,
+        329.6,
+        440
+      ]
+    },
+    {
+      "count": 4,
+      "noteName": "C",
+      "mode": "hon",
+      "label": "本調子",
+      "frequencies": [
+        261.6,
+        349.2,
+        523.3
+      ]
+    },
+    {
+      "count": 4,
+      "noteName": "C",
+      "mode": "niage",
+      "label": "二上り",
+      "frequencies": [
+        261.6,
+        392,
+        523.3
+      ]
+    },
+    {
+      "count": 4,
+      "noteName": "C",
+      "mode": "sansage",
+      "label": "三下り",
+      "frequencies": [
+        261.6,
+        349.2,
+        466.2
+      ]
+    },
+    {
+      "count": 5,
+      "noteName": "C# (Db)",
+      "mode": "hon",
+      "label": "本調子",
+      "frequencies": [
+        277.2,
+        370,
+        554.4
+      ]
+    },
+    {
+      "count": 5,
+      "noteName": "C# (Db)",
+      "mode": "niage",
+      "label": "二上り",
+      "frequencies": [
+        277.2,
+        415.3,
+        554.4
+      ]
+    },
+    {
+      "count": 5,
+      "noteName": "C# (Db)",
+      "mode": "sansage",
+      "label": "三下り",
+      "frequencies": [
+        277.2,
+        370,
+        493.9
+      ]
+    },
+    {
+      "count": 6,
+      "noteName": "D",
+      "mode": "hon",
+      "label": "本調子",
+      "frequencies": [
+        293.7,
+        392,
+        587.3
+      ]
+    },
+    {
+      "count": 6,
+      "noteName": "D",
+      "mode": "niage",
+      "label": "二上り",
+      "frequencies": [
+        293.7,
+        440,
+        587.3
+      ]
+    },
+    {
+      "count": 6,
+      "noteName": "D",
+      "mode": "sansage",
+      "label": "三下り",
+      "frequencies": [
+        293.7,
+        392,
+        523.3
+      ]
+    },
+    {
+      "count": 7,
+      "noteName": "D# (Eb)",
+      "mode": "hon",
+      "label": "本調子",
+      "frequencies": [
+        311.1,
+        415.3,
+        622.3
+      ]
+    },
+    {
+      "count": 7,
+      "noteName": "D# (Eb)",
+      "mode": "niage",
+      "label": "二上り",
+      "frequencies": [
+        311.1,
+        466.2,
+        622.3
+      ]
+    },
+    {
+      "count": 7,
+      "noteName": "D# (Eb)",
+      "mode": "sansage",
+      "label": "三下り",
+      "frequencies": [
+        311.1,
+        415.3,
+        554.4
+      ]
+    },
+    {
+      "count": 8,
+      "noteName": "E",
+      "mode": "hon",
+      "label": "本調子",
+      "frequencies": [
+        329.6,
+        440,
+        659.3
+      ]
+    },
+    {
+      "count": 8,
+      "noteName": "E",
+      "mode": "niage",
+      "label": "二上り",
+      "frequencies": [
+        329.6,
+        493.9,
+        659.3
+      ]
+    },
+    {
+      "count": 8,
+      "noteName": "E",
+      "mode": "sansage",
+      "label": "三下り",
+      "frequencies": [
+        329.6,
+        440,
+        587.3
+      ]
+    },
+    {
+      "count": 9,
+      "noteName": "F",
+      "mode": "hon",
+      "label": "本調子",
+      "frequencies": [
+        349.2,
+        466.2,
+        698.5
+      ]
+    },
+    {
+      "count": 9,
+      "noteName": "F",
+      "mode": "niage",
+      "label": "二上り",
+      "frequencies": [
+        349.2,
+        523.3,
+        698.5
+      ]
+    },
+    {
+      "count": 9,
+      "noteName": "F",
+      "mode": "sansage",
+      "label": "三下り",
+      "frequencies": [
+        349.2,
+        466.2,
+        622.3
+      ]
+    },
+    {
+      "count": 10,
+      "noteName": "F# (Gb)",
+      "mode": "hon",
+      "label": "本調子",
+      "frequencies": [
+        370,
+        493.9,
+        740
+      ]
+    },
+    {
+      "count": 10,
+      "noteName": "F# (Gb)",
+      "mode": "niage",
+      "label": "二上り",
+      "frequencies": [
+        370,
+        554.4,
+        740
+      ]
+    },
+    {
+      "count": 10,
+      "noteName": "F# (Gb)",
+      "mode": "sansage",
+      "label": "三下り",
+      "frequencies": [
+        370,
+        493.9,
+        659.3
+      ]
+    },
+    {
+      "count": 11,
+      "noteName": "G",
+      "mode": "hon",
+      "label": "本調子",
+      "frequencies": [
+        392,
+        523.3,
+        784
+      ]
+    },
+    {
+      "count": 11,
+      "noteName": "G",
+      "mode": "niage",
+      "label": "二上り",
+      "frequencies": [
+        392,
+        587.3,
+        784
+      ]
+    },
+    {
+      "count": 11,
+      "noteName": "G",
+      "mode": "sansage",
+      "label": "三下り",
+      "frequencies": [
+        392,
+        523.3,
+        698.5
+      ]
+    },
+    {
+      "count": 12,
+      "noteName": "G# (Ab)",
+      "mode": "hon",
+      "label": "本調子",
+      "frequencies": [
+        415.3,
+        554.4,
+        830.6
+      ]
+    },
+    {
+      "count": 12,
+      "noteName": "G# (Ab)",
+      "mode": "niage",
+      "label": "二上り",
+      "frequencies": [
+        415.3,
+        622.3,
+        830.6
+      ]
+    },
+    {
+      "count": 12,
+      "noteName": "G# (Ab)",
+      "mode": "sansage",
+      "label": "三下り",
+      "frequencies": [
+        415.3,
+        554.4,
+        740
+      ]
+    }
+  ]
+}

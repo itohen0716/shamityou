@@ -2,9 +2,14 @@
   "use strict";
   const TOTAL = 10, LIMIT = 20;
   const TUNINGS = {
-    honchoshi: { label:"本調子", offsets:[0,5,12] },
-    niagari: { label:"二上り", offsets:[0,7,12] },
-    sansagari: { label:"三下り", offsets:[0,5,10] }
+    honchoshi: { label:"本調子", master:"hon" },
+    niagari: { label:"二上り", master:"niage" },
+    sansagari: { label:"三下り", master:"sansage" }
+  };
+  const DIFFICULTIES = {
+    easy: { label:"かんたん", cents:[-200,-150,-100,100,150,200] },
+    normal: { label:"ふつう", cents:[-50,-40,-30,-20,20,30,40,50] },
+    hard: { label:"むずかしい", cents:[-40,-30,-20,-10,10,20,30,40] }
   };
   const $ = (id) => document.getElementById(id);
   const screens = [...document.querySelectorAll(".screen")];
@@ -13,6 +18,7 @@
   const engine = window.ShianAudioEngine;
   const progress = JSON.parse(localStorage.getItem("shian-ear-progress-v2") || '{"correct":0,"cleared":{}}');
   let lastMode = "basic";
+  let difficulty = "normal";
   let tuning = {}, match = {}, timer;
 
   function show(id) {
@@ -24,24 +30,20 @@
   function image(prefix, name) { $(prefix + "-shami").src = `images/shami_${name}.png`; }
   function message(prefix, text, name = "listening") { $(prefix + "-message").textContent = text; image(prefix, name); }
   function random(array) { return array[Math.floor(Math.random() * array.length)]; }
-  function segmentForSemitone(semitone) {
-    const wrapped = ((semitone % 12) + 12) % 12;
-    const octave = semitone >= 12 ? 12 : 0;
-    return wrapped + 1 + octave;
-  }
-  async function playSemitone(semitone, cents = 0, delay = 0, exclusive = true) {
-    const note = segmentForSemitone(semitone);
-    return engine.playSegment(note, { playbackRate: Math.pow(2, cents / 1200), delay, exclusive });
+  async function playFrequency(frequency, cents = 0, delay = 0, exclusive = true) {
+    return engine.playFrequency(frequency, {
+      playbackRate: Math.pow(2, cents / 1200), delay, exclusive, volume: 1.125
+    });
   }
   async function playTuning(key, hon) {
     try {
       engine.stopAll();
-      const base = 12 - hon;
-      TUNINGS[key].offsets.forEach((offset, index) => playSemitone(base + offset, 0, index * 1.05, index === 0));
+      const entry = window.ShianTuningMaster.get(hon, TUNINGS[key].master);
+      entry.frequencies.forEach((frequency, index) => playFrequency(frequency, 0, index * 1.05, index === 0));
     } catch (error) { message("tuning", error.message, "timeup"); }
   }
-  function playTarget(exclusive = true) { return playSemitone(match.note, 0, 0, exclusive); }
-  function playPlayer(delay = 0, exclusive = true) { return playSemitone(match.note, match.cents, delay, exclusive); }
+  function playTarget(exclusive = true) { return playFrequency(match.frequency, 0, 0, exclusive); }
+  function playPlayer(delay = 0, exclusive = true) { return playFrequency(match.frequency, match.cents, delay, exclusive); }
   function compare() { engine.stopAll(); playTarget(true); playPlayer(1.15, false); }
 
   function updateProgress(mode, score) {
@@ -121,10 +123,11 @@
   function nextMatch() {
     if (match.answered && match.question >= TOTAL) return result("match",match.score,match.best);
     if (match.answered) match.question++;
-    Object.assign(match,{note:Math.floor(Math.random()*16),cents:random([-40,-30,-20,-10,10,20,30,40]),answered:false,time:LIMIT});
+    const entry = random(window.ShianTuningMaster.entries);
+    Object.assign(match,{frequency:random(entry.frequencies),cents:random(DIFFICULTIES[difficulty].cents),answered:false,time:LIMIT});
     $("submit-match").classList.remove("hidden"); $("submit-match").disabled=false; $("next-match").classList.add("hidden");
     shiftButtons.forEach((button)=>button.disabled=false); matchStats(); updateTimer();
-    message("match","二つの音を聴き比べて近づけよう"); setTimeout(compare,250);
+    message("match",`${DIFFICULTIES[difficulty].label}：二つの音を聴き比べて近づけよう`); setTimeout(compare,250);
     timer=setInterval(()=>{ match.time--; updateTimer(); if(match.time<=0) answerMatch(true); },1000);
   }
   function updateTimer() {
@@ -166,6 +169,14 @@
     if(action==="start-advanced")startTuning("advanced");
     if(action==="start-match")startMatch();
   });
+  document.querySelectorAll("[data-difficulty]").forEach((button) => button.addEventListener("click", () => {
+    difficulty = button.dataset.difficulty;
+    document.querySelectorAll("[data-difficulty]").forEach((item) => {
+      const selected = item === button;
+      item.classList.toggle("selected", selected);
+      item.setAttribute("aria-pressed", String(selected));
+    });
+  }));
   $("play-tuning").addEventListener("click",()=>playTuning(tuning.key,tuning.hon));
   $("submit-tuning").addEventListener("click",answerTuning); $("next-tuning").addEventListener("click",nextTuning);
   $("play-target").addEventListener("click",()=>playTarget()); $("play-player").addEventListener("click",()=>playPlayer());

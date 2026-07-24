@@ -101,6 +101,32 @@ h1 {
   gap: 14px;
 }
 
+.difficulty-picker {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 9px;
+  margin: 16px 0;
+  padding: 0;
+  border: 0;
+}
+.difficulty-picker legend { margin-bottom: 9px; font-weight: 700; }
+.difficulty-picker button {
+  display: grid;
+  gap: 4px;
+  min-height: 76px;
+  padding: 10px 7px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--panel);
+  color: var(--ink);
+}
+.difficulty-picker button.selected {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+.difficulty-picker small { color: var(--muted); font-size: .76rem; }
+
 .game-card,
 .course-card {
   width: 100%;
@@ -453,6 +479,7 @@ h1 {
   .hero.compact .hero-shami { height: 105px; }
 
   .course-grid { grid-template-columns: 1fr; }
+  .difficulty-picker { grid-template-columns: 1fr; }
 
   .quiz-panel,
   .result-panel { padding: 15px; }

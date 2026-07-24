@@ -49,24 +49,9 @@
    * 実運用の音域に合わせて後から調整可能。
    * @returns {number[]}
    */
-  function getTargetMidiNotes() {
+  function getTargetEntry() {
     const baseCount = Number(baseStringSelect.value);
-    const tuning = tuningSelect.value;
-    const selectedString = Number(stringSelect.value);
-
-    const firstStringMidi = 35 + baseCount; // 1本=B2? 暫定的に 6本=F3 相当
-    const intervals = {
-      honchoshi: [0, 5, 12],
-      niagari: [0, 7, 12],
-      sansagari: [0, 5, 10]
-    };
-
-    const tuningIntervals = intervals[tuning] || intervals.honchoshi;
-    return tuningIntervals.map((interval) => firstStringMidi + interval);
-  }
-
-  function midiToFrequency(midi) {
-    return 440 * Math.pow(2, (midi - 69) / 12);
+    return window.ShianTuningMaster.get(baseCount, tuningSelect.value);
   }
 
   function midiToDisplayName(midi) {
@@ -81,18 +66,19 @@
   }
 
   function updateTargetDisplay() {
-    const targets = getTargetMidiNotes();
+    const entry = getTargetEntry();
     const selectedIndex = Math.max(0, Math.min(2, Number(stringSelect.value) - 1));
-    const midi = targets[selectedIndex];
+    const frequency = entry.frequencies[selectedIndex];
+    const midi = Math.round(frequencyToMidi(frequency));
     const name = midiToDisplayName(midi);
-    const frequency = midiToFrequency(midi);
 
     targetNote.textContent = `${name.main}${name.octave}`;
-    targetFrequency.textContent = `${frequency.toFixed(2)} Hz`;
+    targetFrequency.textContent = window.ShianTuningMaster.formatHz(frequency);
   }
 
   function frequencyToMidi(frequency) {
-    return 69 + 12 * Math.log2(frequency / 440);
+    const a3 = window.ShianTuningMaster.get(1, "hon").frequencies[0];
+    return 57 + 12 * Math.log2(frequency / a3);
   }
 
   function autoCorrelate(buffer, sampleRate) {
@@ -133,7 +119,12 @@
   function updateMeter(frequency) {
     const exactMidi = frequencyToMidi(frequency);
     const nearestMidi = Math.round(exactMidi);
-    const cents = (exactMidi - nearestMidi) * 100;
+    const entry = getTargetEntry();
+    const selectedIndex = Math.max(0, Math.min(2, Number(stringSelect.value) - 1));
+    const target = entry.frequencies[selectedIndex];
+    let cents = 1200 * Math.log2(frequency / target);
+    while (cents > 600) cents -= 1200;
+    while (cents < -600) cents += 1200;
     const name = midiToDisplayName(nearestMidi);
 
     frequencyValue.textContent = frequency.toFixed(1);

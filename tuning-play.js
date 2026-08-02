@@ -1,5 +1,8 @@
-(() => {
+(async () => {
   "use strict";
+
+  const TUNING_TOLERANCE_CENTS = 10;
+  const REQUIRED_STABLE_MS = 1000;
 
   const ORDER = ["ichi", "ni", "san"];
   const LABELS = { ichi: "一の糸", ni: "二の糸", san: "三の糸" };
@@ -8,14 +11,22 @@
   const $ = (id) => document.getElementById(id);
   const els = {
     summary:$("playSummary"), hz:[$("hzIchi"),$("hzNi"),$("hzSan")], stop:$("stopButton"),
-    mic:$("micState"), needle:$("meterNeedle"), judgement:$("judgement"),
+    mic:$("micState"), targetHz:$("activeTargetHz"), measuredHz:$("measuredHz"),
+    needle:$("meterNeedle"), judgement:$("judgement"),
     expression:$("expressionImage"), message:$("shamiMessage"), overlay:$("sceneOverlay"), scene:$("sceneImage")
   };
 
   const tuning = localStorage.getItem("shian-tuning") || "hon";
   const practice = localStorage.getItem("shian-practice") || "sequence";
   const count = Math.max(1, Math.min(12, Number(localStorage.getItem("shian-count")) || 6));
-  const master = window.ShianTuningMaster;
+  let master;
+  try {
+    master = await window.ShianTuningMasterReady;
+  } catch (error) {
+    els.mic.textContent = "調弦データを読み込めません";
+    els.judgement.textContent = error.message || "再読み込みしてください";
+    return;
+  }
   const target = master.get(count, tuning);
   const notes = target.frequencies;
 
@@ -29,8 +40,18 @@
     els.judgement.textContent = judgement;
     els.judgement.classList.toggle("ok", ok);
   }
+  function setGuidance(kind, message) {
+    els.expression.src = `./images/expressions/${EXPRESSIONS[kind]}`;
+    els.message.textContent = message;
+  }
   function setNeedle(cents) {
     els.needle.style.left = `${50 + Math.max(-50, Math.min(50, cents))}%`;
+  }
+  function isInTune(cents) {
+    return Math.abs(cents) <= TUNING_TOLERANCE_CENTS;
+  }
+  function updateActiveTarget() {
+    els.targetHz.textContent = activeIndex < 0 ? "--.-Hz" : master.formatHz(notes[activeIndex]).replace(" ", "");
   }
   function updateButtons() {
     document.querySelectorAll("[data-string]").forEach((button, index) => {
@@ -59,6 +80,7 @@
   }
   function startReference() {
     stopReference();
+    els.mic.textContent = "基準音を再生中";
     playReference().catch(handleError);
     referenceTimer = window.setInterval(() => playReference().catch(handleError), 3000);
   }
@@ -85,6 +107,10 @@
     const data = new Float32Array(analyser.fftSize);
     const tick = (now) => {
       if (!running) return;
+      if (changing) {
+        rafId = requestAnimationFrame(tick);
+        return;
+      }
       analyser.getFloatTimeDomainData(data);
       if (now < suppressUntil) {
         resetStability();
@@ -96,7 +122,6 @@
       if (pitch.frequency < 0 || pitch.clarity < 0.45) {
         resetStability();
         els.mic.textContent = "糸を弾いてください";
-        setFeedback("listening", "一音ずつ、ゆっくり弾いてね", "音を待っています");
         rafId = requestAnimationFrame(tick);
         return;
       }
@@ -105,17 +130,18 @@
       while (cents > 600) cents -= 1200;
       while (cents < -600) cents += 1200;
       setNeedle(cents);
+      els.measuredHz.textContent = master.formatHz(pitch.frequency).replace(" ", "");
       els.mic.textContent = `${LABELS[ORDER[activeIndex]]}を測定中`;
 
       // 弾き始めの250msはアタックとして判定から除外する。
       if (now - voicedSince < 250) {
         stableSince = 0;
         setFeedback("listening", "音が落ち着くのを待っています", "アタックを除外中");
-      } else if (Math.abs(cents) <= 10) {
+      } else if (isInTune(cents)) {
         if (!stableSince) stableSince = now;
         const elapsed = now - stableSince;
-        setFeedback("ok", "そのまま保ってね", `合っています（${Math.min(1, elapsed / 1000).toFixed(1)}秒）`, true);
-        if (elapsed >= 1000) matched();
+        setFeedback("ok", "そのまま保ってね", "合っています", true);
+        if (elapsed >= REQUIRED_STABLE_MS) matched();
       } else {
         stableSince = 0;
         const low = cents < 0;
@@ -130,7 +156,7 @@
     changing = true;
     stopReference();
     resetStability();
-    setFeedback("ok", "ぴったりです！", "±10 cent以内で1秒安定しました", true);
+    setFeedback("ok", "ぴったりです！", "合っています", true);
     await new Promise((resolve) => setTimeout(resolve, 500));
     if (practice === "single") {
       stopSession(false);
@@ -140,20 +166,22 @@
     if (activeIndex < 2) {
       await showScene(activeIndex === 0 ? "next2" : "next3", 1500);
       activeIndex += 1;
+      updateActiveTarget();
       updateButtons();
-      setFeedback("listening", `${LABELS[ORDER[activeIndex]]}を合わせよう`);
+      setGuidance("listening", `${LABELS[ORDER[activeIndex]]}を合わせよう`);
       startReference();
       changing = false;
     } else {
       stopSession(false);
       await showScene("complete", 2600);
-      setFeedback("ok", "調弦完了です！", "三本とも整いました", true);
+      setGuidance("ok", "調弦完了です！");
       changing = false;
     }
   }
   async function startSession(index) {
     try {
-      activeIndex = index;
+    activeIndex = index;
+      updateActiveTarget();
       els.mic.textContent = "音源とマイクを準備中";
       await window.ShianAudioEngine.resume();
       await Promise.all([window.ShianAudioEngine.load(), ensureMicrophone()]);
@@ -162,7 +190,7 @@
       updateButtons();
       startReference();
       pitchLoop();
-      setFeedback("listening", "基準音のあとに弾いてね");
+      setGuidance("listening", "基準音のあとに弾いてね");
     } catch (error) { handleError(error); }
   }
   function stopSession(message = true) {
@@ -172,6 +200,7 @@
     resetStability();
     activeIndex = -1;
     setNeedle(0);
+    updateActiveTarget();
     updateButtons();
     if (message) els.mic.textContent = "停止しました";
   }

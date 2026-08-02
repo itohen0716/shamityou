@@ -2,7 +2,7 @@
   "name": "絲庵 ─ Shamisen ─",
   "short_name": "Shamisen",
   "id": "./",
-  "version": "4.0.1",
+  "version": "4.1",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

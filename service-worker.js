@@ -1,10 +1,10 @@
-const CACHE_NAME = "shian-shamisen-v4.0.1";
+const CACHE_NAME = "shian-shamisen-v4.1-r3";
 const APP_SHELL = [
-  "./","./index.html","./tuning.html","./tuning-play.html","./style.css?v=401",
-  "./home.js?v=401","./setup.js?v=401","./tuner.js?v=401","./sound-segments.js?v=401",
-  "./tuning-master.js?v=401","./tuning-master.json","./tuning-master.csv","./audio-engine.js?v=401","./tuning-play.js?v=401",
-  "./mimi-game/index.html","./mimi-game/game.css?v=401","./mimi-game/game.js?v=401",
-  "./tuner/index.html","./tuner/style.css","./tuner/app.js?v=401",
+  "./","./index.html","./tuning.html","./tuning-play.html","./style.css?v=412",
+  "./home.js?v=410","./setup.js?v=410","./tuner.js?v=410","./sound-segments.js?v=410",
+  "./tuning-data.js?v=410","./tuning-master.json","./audio-engine.js?v=410","./tuning-play.js?v=412",
+  "./mimi-game/index.html","./mimi-game/game.css?v=411","./mimi-game/game.js?v=411",
+  "./tuner/index.html","./tuner/style.css","./tuner/app.js?v=410",
   "./manifest.webmanifest","./sounds/teacher-1to12-octave.wav",
   "./images/home/shami-home.png","./images/home/icon-tuning.png","./images/home/icon-ear.png","./images/home/tyu.png","./images/home/icon-erika.png",
   "./images/buttons/hon.png","./images/buttons/niage.png","./images/buttons/sansage.png",

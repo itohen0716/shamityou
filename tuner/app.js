@@ -1,7 +1,14 @@
 "use strict";
 
-(() => {
-  const MASTER = window.ShianTuningMaster;
+((async () => {
+  let MASTER;
+  try {
+    MASTER = await window.ShianTuningMasterReady;
+  } catch (error) {
+    document.body.innerHTML =
+      `<p style="padding:24px">${error.message || "調弦データを読み込めませんでした。"}</p>`;
+    return;
+  }
   if (!MASTER || typeof MASTER.get !== "function") {
     document.body.innerHTML =
       '<p style="padding:24px">調弦データを読み込めませんでした。</p>';
@@ -488,4 +495,4 @@
 
   updateModeUI();
   resetMeter();
-})();
+})());

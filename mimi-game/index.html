@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#f7f2e8"><title>耳を育てる｜絃庵</title>
-  <link rel="stylesheet" href="game.css?v=401">
+  <link rel="stylesheet" href="game.css?v=411">
 </head>
 <body><main class="app-shell">
   <section id="screen-menu" class="screen active">
@@ -34,7 +34,7 @@
       <div id="hon-display" class="hon-display"></div><button id="play-tuning" class="primary-button">♪ 三本の糸を聴く</button>
       <fieldset class="answer-group"><legend>調子を選ぶ</legend><div class="answer-grid three"><button class="answer-button" data-tuning="honchoshi">本調子</button><button class="answer-button" data-tuning="niagari">二上り</button><button class="answer-button" data-tuning="sansagari">三下り</button></div></fieldset>
       <fieldset id="hon-answer-area" class="answer-group hidden"><legend>一の糸の本数</legend><div id="hon-buttons" class="hon-grid"></div></fieldset>
-      <button id="submit-tuning" class="confirm-button" disabled>回答する</button><button id="next-tuning" class="primary-button hidden">次の問題へ</button>
+      <button id="next-tuning" class="primary-button hidden">次の問題へ</button>
     </article>
   </section>
   <section id="screen-match-game" class="screen">
@@ -43,11 +43,16 @@
     <article class="quiz-panel"><div class="timer-wrap"><span>残り</span><strong id="timer">20</strong><span>秒</span></div><div class="timer-bar"><span id="timer-bar-fill"></span></div>
       <img id="match-shami" src="images/shami_listening.png" alt="" class="quiz-shami"><h2>基準音に合わせよう</h2><p id="match-message" class="message">二つの音を聴き比べてください</p>
       <div class="sound-buttons"><button id="play-target" class="secondary-button">♪ 基準音</button><button id="play-player" class="secondary-button">♪ 自分の音</button><button id="play-compare" class="primary-button">♪ 聴き比べる</button></div>
+      <section id="match-hint" class="match-hint hidden" aria-live="polite">
+        <h3>ヒント</h3>
+        <div><span>♪基準音</span><strong id="hint-target-hz">--.-Hz</strong></div>
+        <div><span>♪自分の音</span><strong id="hint-player-hz">--.-Hz</strong></div>
+      </section>
       <div class="pitch-controls"><button data-shift="-20">大きく下げる</button><div class="pitch-row"><button data-shift="-5">少し下げる</button><button data-shift="5">少し上げる</button></div><button data-shift="20">大きく上げる</button></div>
       <button id="submit-match" class="confirm-button">この音で決定</button><button id="next-match" class="primary-button hidden">次の問題へ</button>
     </article>
   </section>
   <section id="screen-result" class="screen"><article class="result-panel"><img id="result-shami" src="images/shami_finish.png" alt="" class="result-shami"><h2>ゲーム終了！</h2><p id="result-course" class="badge large"></p><div class="result-score"><span>正解数</span><strong id="result-score"></strong></div><div class="result-score secondary"><span>最高連続正解</span><strong id="result-best-streak"></strong></div><p id="result-message" class="result-message"></p><div id="result-certification" class="hidden"></div><div class="result-actions"><button id="replay-button" class="primary-button">もう一度</button><button data-action="menu" class="secondary-button">ゲームを選ぶ</button><a class="home-link button-like" href="../index.html">ホームへ戻る</a></div></article></section>
 </main>
-<script src="../tuning-master.js?v=401"></script><script src="../sound-segments.js?v=401"></script><script src="../audio-engine.js?v=401"></script><script src="game.js?v=401"></script>
+<script src="../tuning-data.js?v=410"></script><script src="../sound-segments.js?v=410"></script><script src="../audio-engine.js?v=410"></script><script src="game.js?v=411"></script>
 </body></html>

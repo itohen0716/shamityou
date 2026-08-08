@@ -1,58 +1,331 @@
 <!doctype html>
 <html lang="ja">
 <head>
-  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <meta name="theme-color" content="#f7f2e8"><title>耳を育てる｜絃庵</title>
-  <link rel="stylesheet" href="game.css?v=411">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#f7f2e8">
+  <title>耳を育てる｜絲庵</title>
+  <link rel="stylesheet" href="./game.css?v=100">
 </head>
-<body><main class="app-shell">
-  <section id="screen-menu" class="screen active">
-    <a class="page-back-link" href="../index.html">‹ ホームへ戻る</a>
-    <header class="page-heading"><img src="images/mimi-icon.png" alt="" class="page-icon"><div><h1>耳を育てる</h1><p>ねこ先生の音で音感を育てよう</p></div></header>
-    <section class="ear-level-panel"><div class="ear-level-main"><span>耳レベル</span><strong id="ear-level-label">Lv.1</strong></div><div class="level-progress"><span id="level-progress-fill"></span></div><p id="level-progress-text">累計 0 問正解</p></section>
-    <div id="certification-banner" class="certification-banner hidden"><strong>三味線耳認定！</strong><span>すべてのゲームをクリアしました</span></div>
-    <div class="menu-intro"><h2>ゲームを選んでね</h2><p>すべて、ねこ先生の音を使います。</p></div>
-    <fieldset class="difficulty-picker"><legend>音を合わせる 難易度</legend>
-      <button type="button" data-difficulty="easy" aria-pressed="false"><strong>かんたん</strong><small>半音〜全音程度・初心者向け</small></button>
-      <button type="button" data-difficulty="normal" class="selected" aria-pressed="true"><strong>ふつう</strong><small>20〜50 cent</small></button>
-      <button type="button" data-difficulty="hard" aria-pressed="false"><strong>むずかしい</strong><small>現行レベル</small></button>
-    </fieldset>
-    <div class="game-menu">
-      <button class="game-card" data-action="open-tuning"><span class="game-card-number">1</span><span class="game-card-body"><strong>調子を当てる</strong><small>本調子・二上り・三下りを聴き分ける</small></span><span class="arrow">›</span></button>
-      <button class="game-card" data-action="start-match"><span class="game-card-number">2</span><span class="game-card-body"><strong>音を合わせる</strong><small>音を上下して基準音に近づける</small></span><span class="arrow">›</span></button>
-    </div>
-  </section>
-  <section id="screen-tuning-select" class="screen">
-    <button class="back-button" data-action="menu">‹ ゲーム選択へ</button>
-    <div class="hero compact"><img src="images/shami_ready.png" alt="" class="hero-shami"><div><h2>調子を当てる</h2><p>コースを選んでください</p></div></div>
-    <div class="course-grid"><button class="course-card" data-action="start-basic"><strong>基本</strong><span>本数を表示</span><small>調子だけを当てる</small></button><button class="course-card" data-action="start-advanced"><strong>応用</strong><span>本数も非表示</span><small>調子と本数を当てる</small></button></div>
-  </section>
-  <section id="screen-tuning-game" class="screen">
-    <div class="top-row"><button class="back-button" data-action="tuning-select">‹ コース選択へ</button><span id="tuning-course-badge" class="badge">基本</span></div>
-    <div class="stats"><div><span>問題</span><strong id="tuning-question">1 / 10</strong></div><div><span>正解</span><strong id="tuning-score">0</strong></div><div><span>連続</span><strong id="tuning-streak">0</strong></div></div>
-    <article class="quiz-panel"><img id="tuning-shami" src="images/shami_listening.png" alt="" class="quiz-shami"><h2>音を聴いてみよう</h2><p id="tuning-message" class="message">再生してください</p>
-      <div id="hon-display" class="hon-display"></div><button id="play-tuning" class="primary-button">♪ 三本の糸を聴く</button>
-      <fieldset class="answer-group"><legend>調子を選ぶ</legend><div class="answer-grid three"><button class="answer-button" data-tuning="honchoshi">本調子</button><button class="answer-button" data-tuning="niagari">二上り</button><button class="answer-button" data-tuning="sansagari">三下り</button></div></fieldset>
-      <fieldset id="hon-answer-area" class="answer-group hidden"><legend>一の糸の本数</legend><div id="hon-buttons" class="hon-grid"></div></fieldset>
-      <button id="next-tuning" class="primary-button hidden">次の問題へ</button>
-    </article>
-  </section>
-  <section id="screen-match-game" class="screen">
-    <button class="back-button" data-action="menu">‹ ゲーム選択へ</button>
-    <div class="stats"><div><span>問題</span><strong id="match-question">1 / 10</strong></div><div><span>正解</span><strong id="match-score">0</strong></div><div><span>連続</span><strong id="match-streak">0</strong></div></div>
-    <article class="quiz-panel"><div class="timer-wrap"><span>残り</span><strong id="timer">20</strong><span>秒</span></div><div class="timer-bar"><span id="timer-bar-fill"></span></div>
-      <img id="match-shami" src="images/shami_listening.png" alt="" class="quiz-shami"><h2>基準音に合わせよう</h2><p id="match-message" class="message">二つの音を聴き比べてください</p>
-      <div class="sound-buttons"><button id="play-target" class="secondary-button">♪ 基準音</button><button id="play-player" class="secondary-button">♪ 自分の音</button><button id="play-compare" class="primary-button">♪ 聴き比べる</button></div>
-      <section id="match-hint" class="match-hint hidden" aria-live="polite">
-        <h3>ヒント</h3>
-        <div><span>♪基準音</span><strong id="hint-target-hz">--.-Hz</strong></div>
-        <div><span>♪自分の音</span><strong id="hint-player-hz">--.-Hz</strong></div>
+<body>
+  <main class="app-shell">
+
+    <!-- トップ -->
+    <section id="screen-menu" class="screen active" aria-labelledby="menu-title">
+      <a class="page-back-link" href="../index.html">‹ ホームへ戻る</a>
+
+      <header class="page-heading">
+        <img src="./images/mimi-icon.png" alt="" class="page-icon">
+        <div class="page-heading-text">
+          <h1 id="menu-title">耳を育てる</h1>
+          <p>三味線耳を育てよう♪</p>
+        </div>
+      </header>
+
+      <section class="ear-level-panel" aria-label="耳レベル">
+        <div class="ear-level-main">
+          <span>耳レベル</span>
+          <strong id="ear-level-label">Lv.1 初心者</strong>
+        </div>
+        <div class="level-progress" aria-hidden="true">
+          <span id="level-progress-fill"></span>
+        </div>
+        <p id="level-progress-text">累計 0問正解</p>
       </section>
-      <div class="pitch-controls"><button data-shift="-20">大きく下げる</button><div class="pitch-row"><button data-shift="-5">少し下げる</button><button data-shift="5">少し上げる</button></div><button data-shift="20">大きく上げる</button></div>
-      <button id="submit-match" class="confirm-button">この音で決定</button><button id="next-match" class="primary-button hidden">次の問題へ</button>
-    </article>
-  </section>
-  <section id="screen-result" class="screen"><article class="result-panel"><img id="result-shami" src="images/shami_finish.png" alt="" class="result-shami"><h2>ゲーム終了！</h2><p id="result-course" class="badge large"></p><div class="result-score"><span>正解数</span><strong id="result-score"></strong></div><div class="result-score secondary"><span>最高連続正解</span><strong id="result-best-streak"></strong></div><p id="result-message" class="result-message"></p><div id="result-certification" class="hidden"></div><div class="result-actions"><button id="replay-button" class="primary-button">もう一度</button><button data-action="menu" class="secondary-button">ゲームを選ぶ</button><a class="home-link button-like" href="../index.html">ホームへ戻る</a></div></article></section>
-</main>
-<script src="../tuning-data.js?v=410"></script><script src="../sound-segments.js?v=410"></script><script src="../audio-engine.js?v=410"></script><script src="game.js?v=411"></script>
-</body></html>
+
+      <div id="certification-banner" class="certification-banner hidden">
+        <strong>🎉 三味線耳認定！</strong>
+        <span>3つのゲームの最終目標を達成しました</span>
+        <button type="button" id="open-certificate-top" class="link-button">認定証を見る</button>
+      </div>
+
+      <div class="menu-intro">
+        <h2>ゲームを選んでね</h2>
+        <p>マイクは使いません。先生音源をよく聴いて答えます。</p>
+      </div>
+
+      <div class="game-menu">
+        <button type="button" class="game-card" data-action="open-tuning-select">
+          <span class="game-card-number">1</span>
+          <span class="game-card-body">
+            <strong>調子を当てる</strong>
+            <small>本調子・二上り・三下りを聴き分ける</small>
+          </span>
+          <span class="arrow" aria-hidden="true">›</span>
+        </button>
+
+        <button type="button" class="game-card" data-action="open-count-select">
+          <span class="game-card-number">2</span>
+          <span class="game-card-body">
+            <strong>何本か当てる</strong>
+            <small>一の糸を聴いて、本数を当てる</small>
+          </span>
+          <span class="arrow" aria-hidden="true">›</span>
+        </button>
+
+        <button type="button" class="game-card" data-action="open-match-select">
+          <span class="game-card-number">3</span>
+          <span class="game-card-body">
+            <strong>音を合わせる</strong>
+            <small>音を上げ下げして基準音に合わせる</small>
+          </span>
+          <span class="arrow" aria-hidden="true">›</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- ① 調子 難易度 -->
+    <section id="screen-tuning-select" class="screen">
+      <button type="button" class="back-button" data-action="menu">‹ ゲーム選択へ</button>
+      <div class="hero compact">
+        <img src="./images/shami_listening.png" alt="" class="hero-shami">
+        <div>
+          <h2>① 調子を当てる</h2>
+          <p>本数は問題にしません。画面に表示します。</p>
+        </div>
+      </div>
+
+      <div class="difficulty-grid">
+        <button type="button" class="difficulty-card" data-start-tuning="easy">
+          <strong>簡単</strong>
+          <span>6本固定・繰り返し再生</span>
+        </button>
+        <button type="button" class="difficulty-card" data-start-tuning="normal">
+          <strong>普通</strong>
+          <span>1〜8本・繰り返し再生</span>
+        </button>
+        <button type="button" class="difficulty-card" data-start-tuning="hard">
+          <strong>難しい</strong>
+          <span>1〜12本・自分で再生</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- ① 調子ゲーム -->
+    <section id="screen-tuning-game" class="screen">
+      <div class="top-row">
+        <button type="button" class="back-button" data-action="open-tuning-select">‹ 難易度選択へ</button>
+        <span id="tuning-difficulty-badge" class="badge">簡単</span>
+      </div>
+
+      <div class="stats">
+        <div><span>問題</span><strong id="tuning-question">1 / 10</strong></div>
+        <div><span>正解</span><strong id="tuning-score">0</strong></div>
+        <div><span>連続</span><strong id="tuning-streak">0</strong></div>
+      </div>
+
+      <article class="quiz-panel">
+        <img id="tuning-shami" src="./images/shami_listening.png" alt="" class="quiz-shami">
+        <h2>この調子はどれ？</h2>
+        <p id="tuning-message" class="message" aria-live="polite">音を聴いて答えてね。</p>
+
+        <div id="tuning-hon-display" class="hon-display">6本</div>
+
+        <button type="button" id="play-tuning" class="primary-button">♪ 三本の糸を聴く</button>
+
+        <div class="answer-grid three tuning-answer-grid">
+          <button type="button" class="answer-button" data-tuning-answer="hon">本調子</button>
+          <button type="button" class="answer-button" data-tuning-answer="niage">二上り</button>
+          <button type="button" class="answer-button" data-tuning-answer="sansage">三下り</button>
+        </div>
+
+        <button type="button" id="next-tuning" class="primary-button hidden">次の問題へ</button>
+      </article>
+    </section>
+
+    <!-- ② 本数 難易度 -->
+    <section id="screen-count-select" class="screen">
+      <button type="button" class="back-button" data-action="menu">‹ ゲーム選択へ</button>
+
+      <div class="hero compact">
+        <img src="./images/shami_listening.png" alt="" class="hero-shami">
+        <div>
+          <h2>② 何本か当てる</h2>
+          <p>一の糸の高さを覚えよう。</p>
+        </div>
+      </div>
+
+      <div class="difficulty-grid">
+        <button type="button" class="difficulty-card" data-start-count="easy">
+          <strong>簡単</strong>
+          <span>連続した3音</span>
+        </button>
+        <button type="button" class="difficulty-card" data-start-count="normal">
+          <strong>普通</strong>
+          <span>連続した5音</span>
+        </button>
+        <button type="button" class="difficulty-card" data-start-count="hard">
+          <strong>難しい</strong>
+          <span>ランダム3音</span>
+        </button>
+      </div>
+
+      <div id="count-unlock-area" class="unlock-area">
+        <button type="button" id="count-master-button" class="unlock-button hidden" data-start-count="master">
+          👑 達人に挑戦
+          <small>完全ランダム4音</small>
+        </button>
+
+        <button type="button" id="count-super-button" class="unlock-button super hidden" data-start-count="super">
+          🌟 超達人に挑戦
+          <small>完全ランダム5音</small>
+        </button>
+
+        <p id="count-lock-note" class="lock-note">難しいをクリアすると、達人への道が開きます。</p>
+      </div>
+    </section>
+
+    <!-- ② 本数ゲーム -->
+    <section id="screen-count-game" class="screen">
+      <div class="top-row">
+        <button type="button" class="back-button" data-action="open-count-select">‹ 難易度選択へ</button>
+        <span id="count-difficulty-badge" class="badge">簡単</span>
+      </div>
+
+      <div class="stats">
+        <div><span>問題</span><strong id="count-question">1 / 10</strong></div>
+        <div><span>正解</span><strong id="count-score">0</strong></div>
+        <div><span>連続</span><strong id="count-streak">0</strong></div>
+      </div>
+
+      <article class="quiz-panel">
+        <img id="count-shami" src="./images/shami_listening.png" alt="" class="quiz-shami">
+        <h2 id="count-prompt">○本は、どれ？</h2>
+        <p id="count-message" class="message" aria-live="polite">音を順番に聴いて答えてね。</p>
+
+        <button type="button" id="play-count-sequence" class="primary-button">♪ Aから順に聴く</button>
+
+        <div id="count-sound-labels" class="sound-labels" aria-label="問題音"></div>
+
+        <div id="count-answer-buttons" class="count-answer-buttons" aria-label="回答"></div>
+
+        <button type="button" id="next-count" class="primary-button hidden">次の問題へ</button>
+      </article>
+    </section>
+
+    <!-- ③ 音合わせ 難易度 -->
+    <section id="screen-match-select" class="screen">
+      <button type="button" class="back-button" data-action="menu">‹ ゲーム選択へ</button>
+
+      <div class="hero compact">
+        <img src="./images/shami_ready.png" alt="" class="hero-shami">
+        <div>
+          <h2>③ 音を合わせる</h2>
+          <p>自分の音を上下して、基準音に近づけよう。</p>
+        </div>
+      </div>
+
+      <div class="difficulty-grid">
+        <button type="button" class="difficulty-card" data-start-match="easy">
+          <strong>簡単</strong>
+          <span>大きめの音程差・30秒</span>
+        </button>
+        <button type="button" class="difficulty-card" data-start-match="normal">
+          <strong>普通</strong>
+          <span>中くらいの音程差・20秒</span>
+        </button>
+        <button type="button" class="difficulty-card" data-start-match="hard">
+          <strong>難しい</strong>
+          <span>小さな音程差・15秒</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- ③ 音合わせゲーム -->
+    <section id="screen-match-game" class="screen">
+      <div class="top-row">
+        <button type="button" class="back-button" data-action="open-match-select">‹ 難易度選択へ</button>
+        <span id="match-difficulty-badge" class="badge">普通</span>
+      </div>
+
+      <div class="stats">
+        <div><span>問題</span><strong id="match-question">1 / 10</strong></div>
+        <div><span>正解</span><strong id="match-score">0</strong></div>
+        <div><span>連続</span><strong id="match-streak">0</strong></div>
+      </div>
+
+      <article class="quiz-panel">
+        <div class="timer-wrap">
+          <span>残り</span>
+          <strong id="match-timer">20</strong>
+          <span>秒</span>
+        </div>
+        <div class="timer-bar"><span id="match-timer-fill"></span></div>
+
+        <img id="match-shami" src="./images/shami_listening.png" alt="" class="quiz-shami">
+        <h2>基準音に合わせよう</h2>
+        <p id="match-message" class="message" aria-live="polite">二つの音を聴き比べてね。</p>
+
+        <div class="sound-buttons">
+          <button type="button" id="play-match-target" class="secondary-button">♪ 基準音</button>
+          <button type="button" id="play-match-player" class="secondary-button">♪ 自分の音</button>
+          <button type="button" id="play-match-compare" class="primary-button">♪ 聴き比べる</button>
+        </div>
+
+        <div class="pitch-controls">
+          <button type="button" data-shift="-20">大きく下げる</button>
+          <div class="pitch-row">
+            <button type="button" data-shift="-5">少し下げる</button>
+            <button type="button" data-shift="5">少し上げる</button>
+          </div>
+          <button type="button" data-shift="20">大きく上げる</button>
+        </div>
+
+        <button type="button" id="submit-match" class="confirm-button">この音で確定</button>
+        <button type="button" id="next-match" class="primary-button hidden">次の問題へ</button>
+      </article>
+    </section>
+
+    <!-- 結果 -->
+    <section id="screen-result" class="screen">
+      <article class="result-panel">
+        <img id="result-shami" src="./images/shami_finish.png" alt="" class="result-shami">
+        <h2>ゲーム終了！</h2>
+        <p id="result-course" class="badge large"></p>
+
+        <div class="result-score">
+          <span>正解数</span>
+          <strong id="result-score">0 / 10</strong>
+        </div>
+        <div class="result-score secondary">
+          <span>最高連続正解</span>
+          <strong id="result-best-streak">0問</strong>
+        </div>
+
+        <p id="result-message" class="result-message"></p>
+
+        <div id="unlock-message" class="unlock-message hidden"></div>
+
+        <div id="result-certification" class="certification-banner hidden">
+          <strong>🎉 三味線耳認定！</strong>
+          <button type="button" id="open-certificate-result" class="link-button">認定証を見る</button>
+        </div>
+
+        <div class="result-actions">
+          <button type="button" id="replay-button" class="primary-button">もう一度遊ぶ</button>
+          <button type="button" data-action="menu" class="secondary-button">ゲームを選ぶ</button>
+          <a class="home-link button-like" href="../index.html">ホームへ戻る</a>
+        </div>
+      </article>
+    </section>
+
+    <!-- 認定証 -->
+    <section id="screen-certificate" class="screen">
+      <button type="button" class="back-button" data-action="menu">‹ ゲーム選択へ</button>
+      <article class="certificate-panel">
+        <h2>🎉 三味線耳認定！</h2>
+        <img src="./images/certificate.png" alt="三味線耳認定証" class="certificate-image">
+        <p>認定おめでとうございます。</p>
+        <a class="home-link button-like" href="../index.html">ホームへ戻る</a>
+      </article>
+    </section>
+
+  </main>
+
+  <!-- 既存アプリのマスター音源・調弦データを共有 -->
+  <script src="../tuning-data.js?v=410"></script>
+  <script src="../sound-segments.js?v=410"></script>
+  <script src="../audio-engine.js?v=410"></script>
+  <script src="./game.js?v=100"></script>
+</body>
+</html>

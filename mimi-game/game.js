@@ -2,342 +2,884 @@
   "use strict";
 
   const TOTAL = 10;
-  const LIMIT = 20;
-  const MATCH_TOLERANCE_CENTS = 5;
-  const TUNING_LOOP_MS = 4300;
-  const COMPARE_LOOP_MS = 2300;
+  const CLEAR_SCORE = 8;
+  const STORAGE_KEY = "shian-ear-progress-v3";
+
   const TUNINGS = {
-    honchoshi: { label: "本調子", master: "hon" },
-    niagari: { label: "二上り", master: "niage" },
-    sansagari: { label: "三下り", master: "sansage" }
+    hon: { label: "本調子" },
+    niage: { label: "二上り" },
+    sansage: { label: "三下り" }
   };
-  const DIFFICULTIES = {
-    easy: { label: "かんたん", cents: [-200, -150, -100, 100, 150, 200] },
-    normal: { label: "ふつう", cents: [-50, -40, -30, -20, 20, 30, 40, 50] },
-    hard: { label: "むずかしい", cents: [-40, -30, -20, -10, 10, 20, 30, 40] }
+
+  const TUNING_LEVELS = {
+    easy: { label: "簡単", honMin: 6, honMax: 6, autoLoop: true },
+    normal: { label: "普通", honMin: 1, honMax: 8, autoLoop: true },
+    hard: { label: "難しい", honMin: 1, honMax: 12, autoLoop: false }
   };
+
+  const COUNT_LEVELS = {
+    easy: { label: "簡単", count: 3, consecutive: true },
+    normal: { label: "普通", count: 5, consecutive: true },
+    hard: { label: "難しい", count: 3, consecutive: false },
+    master: { label: "達人", count: 4, consecutive: false },
+    super: { label: "超達人", count: 5, consecutive: false }
+  };
+
+  const MATCH_LEVELS = {
+    easy: {
+      label: "簡単",
+      time: 30,
+      cents: [-200, -150, -100, 100, 150, 200]
+    },
+    normal: {
+      label: "普通",
+      time: 20,
+      cents: [-50, -40, -30, -20, 20, 30, 40, 50]
+    },
+    hard: {
+      label: "難しい",
+      time: 15,
+      cents: [-40, -30, -20, -10, 10, 20, 30, 40]
+    }
+  };
+
+  const LEVELS = [
+    { level: 1, name: "初心者", min: 0 },
+    { level: 2, name: "見習い", min: 20 },
+    { level: 3, name: "中級", min: 50 },
+    { level: 4, name: "名人", min: 90 },
+    { level: 5, name: "達人", min: 140 }
+  ];
+
   const $ = (id) => document.getElementById(id);
   const screens = [...document.querySelectorAll(".screen")];
-  const tuningButtons = [...document.querySelectorAll("[data-tuning]")];
-  const shiftButtons = [...document.querySelectorAll("[data-shift]")];
+
   const engine = window.ShianAudioEngine;
   let master;
+
   try {
     master = await window.ShianTuningMasterReady;
   } catch (error) {
-    document.body.innerHTML = `<p class="load-error">${error.message || "調弦データを読み込めませんでした。"}</p>`;
+    document.body.innerHTML =
+      `<p class="load-error">調弦データを読み込めませんでした。<br>${escapeHtml(error?.message || "")}</p>`;
     return;
   }
 
-  let progress;
-  try {
-    progress = JSON.parse(localStorage.getItem("shian-ear-progress-v2") || '{"correct":0,"cleared":{}}');
-  } catch (_) {
-    progress = { correct: 0, cleared: {} };
+  if (!engine || !master) {
+    document.body.innerHTML =
+      '<p class="load-error">先生音源を利用するための共通データが見つかりません。</p>';
+    return;
   }
-  let lastMode = "basic";
-  let difficulty = "normal";
-  let tuning = {};
-  let match = {};
-  let timer = 0;
-  let tuningLoopTimer = 0;
-  let compareLoopTimer = 0;
 
-  function stopTuningLoop() {
+  let progress = loadProgress();
+  let tuning = {};
+  let countGame = {};
+  let match = {};
+  let lastReplay = null;
+
+  let tuningLoopTimer = 0;
+  let countPlaybackToken = 0;
+  let matchTimer = 0;
+  let compareTimer = 0;
+
+  function escapeHtml(value) {
+    return String(value)
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
+  }
+
+  function loadProgress() {
+    const fallback = {
+      correct: 0,
+      cleared: {},
+      countMasterUnlocked: false,
+      countSuperUnlocked: false
+    };
+
+    try {
+      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
+      if (!saved || typeof saved !== "object") return fallback;
+
+      return {
+        correct: Number.isFinite(saved.correct) ? Math.max(0, saved.correct) : 0,
+        cleared: saved.cleared && typeof saved.cleared === "object" ? saved.cleared : {},
+        countMasterUnlocked: Boolean(saved.countMasterUnlocked),
+        countSuperUnlocked: Boolean(saved.countSuperUnlocked)
+      };
+    } catch {
+      return fallback;
+    }
+  }
+
+  function saveProgress() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(progress));
+    } catch {
+      // 保存が使えない環境でもゲームは継続可能
+    }
+  }
+
+  function currentLevel() {
+    return [...LEVELS].reverse().find((level) => progress.correct >= level.min) || LEVELS[0];
+  }
+
+  function isCertified() {
+    return Boolean(
+      progress.cleared["tuning-hard"] &&
+      progress.cleared["count-super"] &&
+      progress.cleared["match-hard"]
+    );
+  }
+
+  function updateProgressUI() {
+    const level = currentLevel();
+    const index = LEVELS.findIndex((item) => item.level === level.level);
+    const next = LEVELS[index + 1];
+
+    $("ear-level-label").textContent = `Lv.${level.level} ${level.name}`;
+
+    if (!next) {
+      $("level-progress-fill").style.width = "100%";
+      $("level-progress-text").textContent = `累計 ${progress.correct}問正解・最高レベル達成`;
+    } else {
+      const range = next.min - level.min;
+      const earned = progress.correct - level.min;
+      $("level-progress-fill").style.width = `${Math.max(0, Math.min(100, earned / range * 100))}%`;
+      $("level-progress-text").textContent =
+        `累計 ${progress.correct}問正解／次のレベルまであと${next.min - progress.correct}問`;
+    }
+
+    $("certification-banner").classList.toggle("hidden", !isCertified());
+    updateCountUnlockUI();
+  }
+
+  function updateCountUnlockUI() {
+    $("count-master-button").classList.toggle("hidden", !progress.countMasterUnlocked);
+    $("count-super-button").classList.toggle("hidden", !progress.countSuperUnlocked);
+
+    let text = "難しいをクリアすると、達人への道が開きます。";
+    if (progress.countMasterUnlocked && !progress.countSuperUnlocked) {
+      text = "達人をクリアすると、超達人への道が開きます。";
+    } else if (progress.countSuperUnlocked) {
+      text = "達人・超達人が解放されています。";
+    }
+    $("count-lock-note").textContent = text;
+  }
+
+  function recordResult(key, score) {
+    progress.correct += score;
+
+    if (score >= CLEAR_SCORE) {
+      progress.cleared[key] = true;
+    }
+
+    let unlock = "";
+
+    if (key === "count-hard" && score >= CLEAR_SCORE && !progress.countMasterUnlocked) {
+      progress.countMasterUnlocked = true;
+      unlock = "🎉 達人モードが解放されました！";
+    }
+
+    if (key === "count-master" && score >= CLEAR_SCORE && !progress.countSuperUnlocked) {
+      progress.countSuperUnlocked = true;
+      unlock = "🌟 超達人モードが解放されました！";
+    }
+
+    saveProgress();
+    updateProgressUI();
+    return unlock;
+  }
+
+  function stopAll() {
     clearTimeout(tuningLoopTimer);
     tuningLoopTimer = 0;
+
+    countPlaybackToken += 1;
+
+    clearInterval(matchTimer);
+    matchTimer = 0;
+
+    clearInterval(compareTimer);
+    compareTimer = 0;
+
     engine.stopAll();
   }
-  function stopCompareLoop() {
-    clearInterval(compareLoopTimer);
-    compareLoopTimer = 0;
-    match.comparing = false;
-    engine.stopAll();
-  }
-  function stopAllPlayback() {
-    stopTuningLoop();
-    stopCompareLoop();
-  }
+
   function show(id) {
-    stopAllPlayback();
-    clearInterval(timer);
-    screens.forEach((screen) => screen.classList.toggle("active", screen.id === id));
-    scrollTo({ top: 0, behavior: "smooth" });
+    stopAll();
+    screens.forEach((screen) => {
+      screen.classList.toggle("active", screen.id === id);
+    });
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
-  function image(prefix, name) { $(prefix + "-shami").src = `images/shami_${name}.png`; }
-  function message(prefix, text, name = "listening") {
-    $(prefix + "-message").textContent = text;
-    image(prefix, name);
+
+  function randomItem(array) {
+    return array[Math.floor(Math.random() * array.length)];
   }
-  function random(array) { return array[Math.floor(Math.random() * array.length)]; }
-  function adjustedFrequency() { return match.frequency * Math.pow(2, match.cents / 1200); }
-  function formatHz(value) { return `${Number(value).toFixed(1)}Hz`; }
-  async function playFrequency(frequency, cents = 0, delay = 0, exclusive = true) {
+
+  function randomInt(min, max) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+  }
+
+  function shuffle(array) {
+    const copy = [...array];
+    for (let i = copy.length - 1; i > 0; i -= 1) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [copy[i], copy[j]] = [copy[j], copy[i]];
+    }
+    return copy;
+  }
+
+  function setShami(prefix, name) {
+    const element = $(`${prefix}-shami`);
+    if (element) element.src = `./images/shami_${name}.png`;
+  }
+
+  function setMessage(prefix, text, shami = "listening") {
+    const element = $(`${prefix}-message`);
+    if (element) element.textContent = text;
+    setShami(prefix, shami);
+  }
+
+  async function playFrequency(frequency, options = {}) {
     return engine.playFrequency(frequency, {
-      playbackRate: Math.pow(2, cents / 1200), delay, exclusive, volume: 1.125
+      volume: 1,
+      ...options
     });
   }
 
-  function playTuningSequence() {
-    engine.stopAll();
-    const entry = master.get(tuning.hon, TUNINGS[tuning.key].master);
-    entry.frequencies.forEach((frequency, index) => {
-      playFrequency(frequency, 0, index * 1.05, index === 0).catch((error) => message("tuning", error.message, "timeup"));
-    });
-  }
-  function startTuningLoop() {
-    stopTuningLoop();
-    const cycle = () => {
-      if (tuning.answered) return;
-      playTuningSequence();
-      tuningLoopTimer = window.setTimeout(cycle, TUNING_LOOP_MS);
-    };
-    cycle();
-    message("tuning", "問題音を繰り返し再生しています");
-  }
-  function playTarget(exclusive = true) { return playFrequency(match.frequency, 0, 0, exclusive); }
-  function playPlayer(exclusive = true) { return playFrequency(match.frequency, match.cents, 0, exclusive); }
-  function playComparePair() {
-    engine.stopAll();
-    playTarget(true).catch((error) => message("match", error.message, "timeup"));
-    playPlayer(false).catch((error) => message("match", error.message, "timeup"));
-  }
-  function startCompareLoop() {
-    stopCompareLoop();
-    match.comparing = true;
-    playComparePair();
-    compareLoopTimer = window.setInterval(playComparePair, COMPARE_LOOP_MS);
-    message("match", "基準音と自分の音を繰り返し再生しています");
+  async function playHonNumber(hon, options = {}) {
+    const entry = master.get(hon, "hon");
+    return playFrequency(entry.frequencies[0], options);
   }
 
-  function updateProgress(mode, score) {
-    progress.correct = (progress.correct || 0) + score;
-    if (score >= 5) progress.cleared[mode] = true;
-    localStorage.setItem("shian-ear-progress-v2", JSON.stringify(progress));
-    const level = Math.min(5, Math.floor(progress.correct / 20) + 1);
-    $("ear-level-label").textContent = `Lv.${level}`;
-    $("level-progress-fill").style.width = `${level === 5 ? 100 : (progress.correct % 20) * 5}%`;
-    $("level-progress-text").textContent = `累計 ${progress.correct} 問正解`;
-    $("certification-banner").classList.toggle("hidden", !["basic", "advanced", "match"].every((key) => progress.cleared[key]));
-  }
+  // ---------- ① 調子を当てる ----------
+
   function tuningStats() {
     $("tuning-question").textContent = `${tuning.question} / ${TOTAL}`;
-    $("tuning-score").textContent = tuning.score;
-    $("tuning-streak").textContent = tuning.streak;
+    $("tuning-score").textContent = String(tuning.score);
+    $("tuning-streak").textContent = String(tuning.streak);
   }
-  function createHonButtons() {
-    $("hon-buttons").replaceChildren(...Array.from({ length: 8 }, (_, index) => {
-      const button = document.createElement("button");
-      button.type = "button";
-      button.className = "hon-button";
-      button.textContent = `${index + 1}本`;
-      button.addEventListener("click", () => {
-        if (tuning.answered) return;
-        tuning.answerHon = index + 1;
-        document.querySelectorAll(".hon-button").forEach((item) => item.classList.toggle("selected", item === button));
-        message("tuning", "続けて調子を押すと回答します");
-      });
-      return button;
-    }));
-  }
-  function startTuning(mode) {
-    lastMode = mode;
-    tuning = { mode, question: 1, score: 0, streak: 0, best: 0 };
-    $("tuning-course-badge").textContent = mode === "basic" ? "基本" : "応用";
-    $("hon-answer-area").classList.toggle("hidden", mode === "basic");
-    createHonButtons();
+
+  function startTuning(levelKey) {
+    const level = TUNING_LEVELS[levelKey];
+    if (!level) return;
+
+    lastReplay = () => startTuning(levelKey);
+
+    tuning = {
+      levelKey,
+      level,
+      question: 1,
+      score: 0,
+      streak: 0,
+      best: 0,
+      answered: false
+    };
+
+    $("tuning-difficulty-badge").textContent = level.label;
     show("screen-tuning-game");
-    nextTuning();
+    newTuningQuestion();
   }
-  function nextTuning() {
-    stopTuningLoop();
-    if (tuning.answered && tuning.question >= TOTAL) return result(tuning.mode, tuning.score, tuning.best);
-    if (tuning.answered) tuning.question++;
-    Object.assign(tuning, {
-      key: random(Object.keys(TUNINGS)), hon: Math.floor(Math.random() * 8) + 1,
-      answerKey: null, answerHon: null, answered: false
+
+  function newTuningQuestion() {
+    clearTimeout(tuningLoopTimer);
+    engine.stopAll();
+
+    tuning.key = randomItem(Object.keys(TUNINGS));
+    tuning.hon = randomInt(tuning.level.honMin, tuning.level.honMax);
+    tuning.answered = false;
+
+    document.querySelectorAll("[data-tuning-answer]").forEach((button) => {
+      button.disabled = false;
+      button.classList.remove("correct", "wrong");
     });
-    tuningButtons.forEach((button) => { button.disabled = false; button.classList.remove("selected"); });
-    document.querySelectorAll(".hon-button").forEach((button) => { button.disabled = false; button.classList.remove("selected"); });
-    $("hon-display").classList.toggle("hidden", tuning.mode === "advanced");
-    $("hon-display").textContent = `一の糸：${tuning.hon}本`;
+
     $("next-tuning").classList.add("hidden");
+    $("tuning-hon-display").textContent = `${tuning.hon}本`;
+
     tuningStats();
-    message("tuning", tuning.mode === "advanced" ? "本数を選び、調子を押して回答してください" : "再生して調子を押してください");
-  }
-  function answerTuning(answerKey) {
-    if (tuning.answered) return;
-    if (tuning.mode === "advanced" && !tuning.answerHon) {
-      message("tuning", "先に一の糸の本数を選んでください", "thinking");
-      return;
+
+    if (tuning.level.autoLoop) {
+      startTuningLoop();
+    } else {
+      setMessage("tuning", "♪ 三本の糸を聴く を押して答えてね。");
     }
-    tuning.answerKey = answerKey;
+  }
+
+  async function playTuningOnce() {
+    engine.stopAll();
+    const entry = master.get(tuning.hon, tuning.key);
+
+    for (let i = 0; i < entry.frequencies.length; i += 1) {
+      try {
+        await playFrequency(entry.frequencies[i], { exclusive: true });
+        await wait(180);
+      } catch (error) {
+        setMessage("tuning", error.message || "音を再生できませんでした。", "timeup");
+        break;
+      }
+    }
+  }
+
+  function startTuningLoop() {
+    clearTimeout(tuningLoopTimer);
+
+    const cycle = async () => {
+      if (tuning.answered || !tuning.level.autoLoop) return;
+
+      await playTuningOnce();
+      if (!tuning.answered) {
+        tuningLoopTimer = window.setTimeout(cycle, 500);
+      }
+    };
+
+    setMessage("tuning", "問題音を繰り返し再生しています。");
+    cycle();
+  }
+
+  function answerTuning(answer) {
+    if (tuning.answered) return;
+
     tuning.answered = true;
-    stopTuningLoop();
-    const correct = tuning.answerKey === tuning.key && (tuning.mode === "basic" || tuning.answerHon === tuning.hon);
-    tuningButtons.forEach((button) => { button.disabled = true; button.classList.toggle("selected", button.dataset.tuning === answerKey); });
-    document.querySelectorAll(".hon-button").forEach((button) => { button.disabled = true; });
+    clearTimeout(tuningLoopTimer);
+    engine.stopAll();
+
+    const correct = answer === tuning.key;
+
+    document.querySelectorAll("[data-tuning-answer]").forEach((button) => {
+      button.disabled = true;
+      if (button.dataset.tuningAnswer === tuning.key) button.classList.add("correct");
+      if (button.dataset.tuningAnswer === answer && !correct) button.classList.add("wrong");
+    });
+
     if (correct) {
-      tuning.score++;
-      tuning.streak++;
+      tuning.score += 1;
+      tuning.streak += 1;
       tuning.best = Math.max(tuning.best, tuning.streak);
-      message("tuning", "正解！よく聴き分けられたね", "correct");
+
+      if (tuning.streak >= 3) {
+        setMessage("tuning", `${tuning.streak}問連続正解！すごい！`, "streak");
+      } else {
+        setMessage("tuning", "正解！よく聴き分けられたね♪", "correct");
+      }
     } else {
       tuning.streak = 0;
-      message("tuning", `正解は ${TUNINGS[tuning.key].label}・${tuning.hon}本`, "thinking");
-      playTuningSequence();
+      setMessage("tuning", `おしい！正解は「${TUNINGS[tuning.key].label}」だよ。`, "thinking");
+      playTuningOnce();
     }
+
     tuningStats();
     $("next-tuning").classList.remove("hidden");
-    $("next-tuning").textContent = tuning.question >= TOTAL ? "結果を見る" : "次の問題へ";
+    $("next-tuning").textContent =
+      tuning.question >= TOTAL ? "結果を見る" : "次の問題へ";
   }
+
+  function nextTuning() {
+    if (tuning.question >= TOTAL) {
+      finishGame(
+        `調子を当てる・${tuning.level.label}`,
+        `tuning-${tuning.levelKey}`,
+        tuning.score,
+        tuning.best
+      );
+      return;
+    }
+
+    tuning.question += 1;
+    newTuningQuestion();
+  }
+
+  // ---------- ② 何本か当てる ----------
+
+  function countStats() {
+    $("count-question").textContent = `${countGame.question} / ${TOTAL}`;
+    $("count-score").textContent = String(countGame.score);
+    $("count-streak").textContent = String(countGame.streak);
+  }
+
+  function createCountSet(level) {
+    if (level.consecutive) {
+      const start = randomInt(1, 12 - level.count + 1);
+      return Array.from({ length: level.count }, (_, index) => start + index);
+    }
+
+    return shuffle(Array.from({ length: 12 }, (_, index) => index + 1))
+      .slice(0, level.count);
+  }
+
+  function startCount(levelKey) {
+    const level = COUNT_LEVELS[levelKey];
+    if (!level) return;
+
+    if (levelKey === "master" && !progress.countMasterUnlocked) return;
+    if (levelKey === "super" && !progress.countSuperUnlocked) return;
+
+    lastReplay = () => startCount(levelKey);
+
+    countGame = {
+      levelKey,
+      level,
+      question: 1,
+      score: 0,
+      streak: 0,
+      best: 0,
+      answered: false,
+      playing: false
+    };
+
+    $("count-difficulty-badge").textContent = level.label;
+    show("screen-count-game");
+    newCountQuestion();
+  }
+
+  function newCountQuestion() {
+    engine.stopAll();
+    countPlaybackToken += 1;
+
+    countGame.notes = createCountSet(countGame.level);
+    countGame.targetIndex = randomInt(0, countGame.notes.length - 1);
+    countGame.targetHon = countGame.notes[countGame.targetIndex];
+    countGame.answered = false;
+    countGame.playing = false;
+
+    $("count-prompt").textContent = `${countGame.targetHon}本は、どれ？`;
+    $("next-count").classList.add("hidden");
+
+    buildCountLabels(false);
+    buildCountAnswerButtons();
+
+    countStats();
+    setMessage("count", "Aから順番に音を聴いて答えてね。");
+  }
+
+  function labelName(index) {
+    return String.fromCharCode(65 + index);
+  }
+
+  function buildCountLabels(revealed = false) {
+    const container = $("count-sound-labels");
+    container.style.gridTemplateColumns = `repeat(${countGame.notes.length}, 1fr)`;
+    container.replaceChildren();
+
+    countGame.notes.forEach((hon, index) => {
+      const label = document.createElement("div");
+      label.className = "sound-label";
+      label.dataset.index = String(index);
+
+      const main = document.createElement("strong");
+      main.textContent = labelName(index);
+      label.appendChild(main);
+
+      if (revealed) {
+        label.classList.add("revealed");
+        const value = document.createElement("span");
+        value.className = "note-value";
+        value.textContent = `${hon}本`;
+        label.appendChild(value);
+      }
+
+      container.appendChild(label);
+    });
+  }
+
+  function buildCountAnswerButtons() {
+    const container = $("count-answer-buttons");
+    container.style.gridTemplateColumns = `repeat(${Math.min(countGame.notes.length, 5)}, 1fr)`;
+    container.replaceChildren();
+
+    countGame.notes.forEach((_, index) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "count-answer-button";
+      button.textContent = labelName(index);
+      button.dataset.index = String(index);
+      button.addEventListener("click", () => answerCount(index));
+      container.appendChild(button);
+    });
+  }
+
+  async function playCountSequence() {
+    if (countGame.playing || countGame.answered) return;
+
+    countGame.playing = true;
+    const token = ++countPlaybackToken;
+
+    const labels = [...$("count-sound-labels").querySelectorAll(".sound-label")];
+
+    try {
+      for (let index = 0; index < countGame.notes.length; index += 1) {
+        if (token !== countPlaybackToken) return;
+
+        labels.forEach((label, i) => {
+          label.classList.toggle("playing", i === index);
+        });
+
+        const duration = await playHonNumber(countGame.notes[index], { exclusive: true });
+
+        if (token !== countPlaybackToken) return;
+        await wait(Math.max(120, duration * 1000 + 140));
+      }
+    } catch (error) {
+      setMessage("count", error.message || "音を再生できませんでした。", "timeup");
+    } finally {
+      labels.forEach((label) => label.classList.remove("playing"));
+      countGame.playing = false;
+    }
+  }
+
+  function answerCount(index) {
+    if (countGame.answered || countGame.playing) return;
+
+    countGame.answered = true;
+    countPlaybackToken += 1;
+    engine.stopAll();
+
+    const correct = index === countGame.targetIndex;
+    const buttons = [...$("count-answer-buttons").querySelectorAll(".count-answer-button")];
+
+    buttons.forEach((button, buttonIndex) => {
+      button.disabled = true;
+      if (buttonIndex === countGame.targetIndex) button.classList.add("correct");
+      if (buttonIndex === index && !correct) button.classList.add("wrong");
+    });
+
+    buildCountLabels(true);
+
+    if (correct) {
+      countGame.score += 1;
+      countGame.streak += 1;
+      countGame.best = Math.max(countGame.best, countGame.streak);
+
+      if (countGame.streak >= 3) {
+        setMessage(
+          "count",
+          `${countGame.streak}問連続正解！${countGame.targetHon}本は${labelName(countGame.targetIndex)}だよ♪`,
+          "streak"
+        );
+      } else {
+        setMessage(
+          "count",
+          `正解！${countGame.targetHon}本は${labelName(countGame.targetIndex)}だよ♪`,
+          "correct"
+        );
+      }
+    } else {
+      countGame.streak = 0;
+      setMessage(
+        "count",
+        `おしい！${countGame.targetHon}本は${labelName(countGame.targetIndex)}だったよ。`,
+        "retry"
+      );
+    }
+
+    countStats();
+    $("next-count").classList.remove("hidden");
+    $("next-count").textContent =
+      countGame.question >= TOTAL ? "結果を見る" : "次の問題へ";
+  }
+
+  function nextCount() {
+    if (countGame.question >= TOTAL) {
+      finishGame(
+        `何本か当てる・${countGame.level.label}`,
+        `count-${countGame.levelKey}`,
+        countGame.score,
+        countGame.best
+      );
+      return;
+    }
+
+    countGame.question += 1;
+    newCountQuestion();
+  }
+
+  // ---------- ③ 音を合わせる ----------
 
   function matchStats() {
     $("match-question").textContent = `${match.question} / ${TOTAL}`;
-    $("match-score").textContent = match.score;
-    $("match-streak").textContent = match.streak;
+    $("match-score").textContent = String(match.score);
+    $("match-streak").textContent = String(match.streak);
   }
-  function updateHint() {
-    $("hint-target-hz").textContent = formatHz(match.frequency);
-    $("hint-player-hz").textContent = formatHz(adjustedFrequency());
+
+  function adjustedFrequency() {
+    return match.frequency * Math.pow(2, match.cents / 1200);
   }
-  function hideHint() { $("match-hint").classList.add("hidden"); }
-  function showHint() {
-    updateHint();
-    $("match-hint").classList.remove("hidden");
-  }
-  function startMatch() {
-    lastMode = "match";
-    match = { question: 1, score: 0, streak: 0, best: 0 };
+
+  function startMatch(levelKey) {
+    const level = MATCH_LEVELS[levelKey];
+    if (!level) return;
+
+    lastReplay = () => startMatch(levelKey);
+
+    match = {
+      levelKey,
+      level,
+      question: 1,
+      score: 0,
+      streak: 0,
+      best: 0,
+      answered: false,
+      comparing: false
+    };
+
+    $("match-difficulty-badge").textContent = level.label;
     show("screen-match-game");
-    nextMatch();
+    newMatchQuestion();
   }
-  function startTimer() {
-    clearInterval(timer);
-    timer = window.setInterval(() => {
-      match.time--;
-      updateTimer();
-      if (match.time <= 0) answerMatch(true);
-    }, 1000);
-  }
-  function nextMatch() {
-    stopCompareLoop();
-    clearInterval(timer);
-    if (match.answered && match.question >= TOTAL) return result("match", match.score, match.best);
-    if (match.answered) match.question++;
-    const entry = random(master.entries);
-    Object.assign(match, {
-      frequency: random(entry.frequencies), cents: random(DIFFICULTIES[difficulty].cents),
-      answered: false, retry: false, comparing: false, time: LIMIT
-    });
-    hideHint();
+
+  function newMatchQuestion() {
+    clearInterval(matchTimer);
+    clearInterval(compareTimer);
+    engine.stopAll();
+
+    const entry = randomItem(master.entries);
+
+    match.frequency = randomItem(entry.frequencies);
+    match.cents = randomItem(match.level.cents);
+    match.time = match.level.time;
+    match.answered = false;
+    match.comparing = false;
+
     $("submit-match").classList.remove("hidden");
     $("submit-match").disabled = false;
     $("next-match").classList.add("hidden");
-    shiftButtons.forEach((button) => { button.disabled = false; });
+
+    document.querySelectorAll("[data-shift]").forEach((button) => {
+      button.disabled = false;
+    });
+
     matchStats();
-    updateTimer();
-    message("match", `${DIFFICULTIES[difficulty].label}：聴き比べるを押して近づけよう`);
-    startTimer();
+    updateMatchTimer();
+    setMessage("match", `${match.level.label}：二つの音を聴き比べて近づけよう。`);
+
+    startMatchTimer();
   }
-  function updateTimer() {
-    $("timer").textContent = match.time;
-    $("timer-bar-fill").style.width = `${Math.max(0, match.time / LIMIT * 100)}%`;
+
+  function startMatchTimer() {
+    clearInterval(matchTimer);
+
+    matchTimer = window.setInterval(() => {
+      match.time -= 1;
+      updateMatchTimer();
+
+      if (match.time <= 0) {
+        finishMatch(false, true);
+      }
+    }, 1000);
   }
-  function shift(cents) {
+
+  function updateMatchTimer() {
+    $("match-timer").textContent = String(match.time);
+    $("match-timer-fill").style.width =
+      `${Math.max(0, Math.min(100, match.time / match.level.time * 100))}%`;
+  }
+
+  async function playMatchTarget() {
+    try {
+      await playFrequency(match.frequency, { exclusive: true });
+    } catch (error) {
+      setMessage("match", error.message || "音を再生できませんでした。", "timeup");
+    }
+  }
+
+  async function playMatchPlayer() {
+    try {
+      await playFrequency(adjustedFrequency(), { exclusive: true });
+    } catch (error) {
+      setMessage("match", error.message || "音を再生できませんでした。", "timeup");
+    }
+  }
+
+  async function playMatchCompareOnce() {
+    engine.stopAll();
+
+    try {
+      const targetDuration = await playFrequency(match.frequency, { exclusive: true });
+      await wait(targetDuration * 1000 + 170);
+      await playFrequency(adjustedFrequency(), { exclusive: true });
+    } catch (error) {
+      setMessage("match", error.message || "音を再生できませんでした。", "timeup");
+    }
+  }
+
+  function shiftMatch(cents) {
     if (match.answered) return;
-    match.cents = Math.max(-200, Math.min(200, match.cents + cents));
-    if (match.retry) updateHint();
-    if (match.comparing) startCompareLoop();
-    else playPlayer().catch((error) => message("match", error.message, "timeup"));
-    message("match", cents < 0 ? "音を下げました" : "音を上げました");
+
+    match.cents = Math.max(-240, Math.min(240, match.cents + cents));
+    setMessage("match", cents < 0 ? "自分の音を下げました。" : "自分の音を上げました.");
+    playMatchPlayer();
   }
-  function enterRetry() {
-    clearInterval(timer);
-    match.retry = true;
-    match.streak = 0;
-    match.time = LIMIT;
-    showHint();
-    matchStats();
-    updateTimer();
-    message("match", "時間切れ。\n\nヒントを表示して\n再チャレンジするよ！", "hint");
-    if (match.comparing) startCompareLoop();
-    startTimer();
+
+  function submitMatch() {
+    if (match.answered) return;
+
+    const correct = Math.abs(match.cents) <= 5;
+    finishMatch(correct, false);
   }
-  function finishMatchAnswer(correct) {
-    clearInterval(timer);
+
+  function finishMatch(correct, timeout) {
+    if (match.answered) return;
+
     match.answered = true;
-    stopCompareLoop();
-    shiftButtons.forEach((button) => { button.disabled = true; });
+    clearInterval(matchTimer);
+    clearInterval(compareTimer);
+    engine.stopAll();
+
+    document.querySelectorAll("[data-shift]").forEach((button) => {
+      button.disabled = true;
+    });
+
+    $("submit-match").classList.add("hidden");
+
     if (correct) {
-      if (!match.retry) {
-        match.score++;
-        match.streak++;
-        match.best = Math.max(match.best, match.streak);
-        message("match", "正解！ぴったり合ったよ", "correct");
+      match.score += 1;
+      match.streak += 1;
+      match.best = Math.max(match.best, match.streak);
+
+      if (match.streak >= 3) {
+        setMessage("match", `${match.streak}問連続正解！ぴったりだよ♪`, "streak");
       } else {
-        message("match", "再チャレンジ成功！次の問題へ進もう", "correct");
+        setMessage("match", "正解！ぴったり合ったよ♪", "correct");
       }
     } else {
       match.streak = 0;
-      showHint();
-      message("match", "惜しい！ヒントの音を確認してみよう", "thinking");
+
+      if (timeout) {
+        setMessage("match", "時間切れ！正しい音を聴いてみよう。", "timeup");
+      } else {
+        const direction = match.cents > 0 ? "高かった" : "低かった";
+        setMessage("match", `おしい！自分の音は少し${direction}よ。`, "thinking");
+      }
+
+      match.cents = 0;
+      playMatchCompareOnce();
     }
+
     matchStats();
-    $("submit-match").classList.add("hidden");
     $("next-match").classList.remove("hidden");
-    $("next-match").textContent = match.question >= TOTAL ? "結果を見る" : "次の問題へ";
+    $("next-match").textContent =
+      match.question >= TOTAL ? "結果を見る" : "次の問題へ";
   }
-  function answerMatch(timeout = false) {
-    if (match.answered) return;
-    if (timeout) {
-      enterRetry();
+
+  function nextMatch() {
+    if (match.question >= TOTAL) {
+      finishGame(
+        `音を合わせる・${match.level.label}`,
+        `match-${match.levelKey}`,
+        match.score,
+        match.best
+      );
       return;
     }
-    const correct = Math.abs(match.cents) <= MATCH_TOLERANCE_CENTS;
-    if (match.retry && !correct) {
-      showHint();
-      message("match", "まだ少し違います。ヒントを見て続けよう", "thinking");
-      return;
-    }
-    finishMatchAnswer(correct);
+
+    match.question += 1;
+    newMatchQuestion();
   }
-  function result(mode, score, best) {
-    updateProgress(mode, score);
-    $("result-course").textContent = mode === "match" ? "音を合わせる" : `調子を当てる・${mode === "basic" ? "基本" : "応用"}`;
+
+  // ---------- 結果・認定 ----------
+
+  function finishGame(title, key, score, best) {
+    const unlock = recordResult(key, score);
+
+    $("result-course").textContent = title;
     $("result-score").textContent = `${score} / ${TOTAL}`;
     $("result-best-streak").textContent = `${best}問`;
-    $("result-message").textContent = score >= 8 ? "すごい！耳がしっかり育っています" : score >= 5 ? "よく頑張りました！" : "もう一度挑戦して耳を育てよう";
-    $("result-shami").src = `images/shami_${score === 10 ? "master" : score >= 5 ? "finish" : "ready"}.png`;
+
+    if (score === TOTAL) {
+      $("result-shami").src = "./images/shami_master.png";
+      $("result-message").textContent = "全問正解！すごい！";
+    } else if (score >= CLEAR_SCORE) {
+      $("result-shami").src = "./images/shami_finish.png";
+      $("result-message").textContent = `クリア！${score}問正解できたよ♪`;
+    } else if (score >= 5) {
+      $("result-shami").src = "./images/shami_love.png";
+      $("result-message").textContent =
+        `あと少し！クリアは${CLEAR_SCORE}問正解からだよ。`;
+    } else {
+      $("result-shami").src = "./images/shami_ready.png";
+      $("result-message").textContent =
+        "もう一度挑戦して、少しずつ耳を育てよう♪";
+    }
+
+    $("unlock-message").textContent = unlock;
+    $("unlock-message").classList.toggle("hidden", !unlock);
+
+    $("result-certification").classList.toggle("hidden", !isCertified());
+
     show("screen-result");
   }
 
-  tuningButtons.forEach((button) => button.addEventListener("click", () => answerTuning(button.dataset.tuning)));
-  shiftButtons.forEach((button) => button.addEventListener("click", () => shift(Number(button.dataset.shift))));
+  // ---------- 共通イベント ----------
+
+  function wait(milliseconds) {
+    return new Promise((resolve) => window.setTimeout(resolve, milliseconds));
+  }
+
   document.addEventListener("click", (event) => {
-    const action = event.target.closest("[data-action]")?.dataset.action;
-    if (action === "menu") show("screen-menu");
-    if (action === "open-tuning" || action === "tuning-select") show("screen-tuning-select");
-    if (action === "start-basic") startTuning("basic");
-    if (action === "start-advanced") startTuning("advanced");
-    if (action === "start-match") startMatch();
+    const actionButton = event.target.closest("[data-action]");
+
+    if (actionButton) {
+      const action = actionButton.dataset.action;
+
+      if (action === "menu") {
+        updateProgressUI();
+        show("screen-menu");
+      } else if (action === "open-tuning-select") {
+        show("screen-tuning-select");
+      } else if (action === "open-count-select") {
+        updateCountUnlockUI();
+        show("screen-count-select");
+      } else if (action === "open-match-select") {
+        show("screen-match-select");
+      }
+    }
+
+    const tuningStart = event.target.closest("[data-start-tuning]");
+    if (tuningStart) startTuning(tuningStart.dataset.startTuning);
+
+    const countStart = event.target.closest("[data-start-count]");
+    if (countStart) startCount(countStart.dataset.startCount);
+
+    const matchStart = event.target.closest("[data-start-match]");
+    if (matchStart) startMatch(matchStart.dataset.startMatch);
+
+    const tuningAnswer = event.target.closest("[data-tuning-answer]");
+    if (tuningAnswer) answerTuning(tuningAnswer.dataset.tuningAnswer);
+
+    const shiftButton = event.target.closest("[data-shift]");
+    if (shiftButton) shiftMatch(Number(shiftButton.dataset.shift));
   });
-  document.querySelectorAll("[data-difficulty]").forEach((button) => button.addEventListener("click", () => {
-    difficulty = button.dataset.difficulty;
-    document.querySelectorAll("[data-difficulty]").forEach((item) => {
-      const selected = item === button;
-      item.classList.toggle("selected", selected);
-      item.setAttribute("aria-pressed", String(selected));
-    });
-  }));
-  $("play-tuning").addEventListener("click", startTuningLoop);
+
+  $("play-tuning").addEventListener("click", () => {
+    playTuningOnce();
+  });
+
   $("next-tuning").addEventListener("click", nextTuning);
-  $("play-target").addEventListener("click", () => { stopCompareLoop(); playTarget().catch((error) => message("match", error.message, "timeup")); });
-  $("play-player").addEventListener("click", () => { stopCompareLoop(); playPlayer().catch((error) => message("match", error.message, "timeup")); });
-  $("play-compare").addEventListener("click", startCompareLoop);
-  $("submit-match").addEventListener("click", () => answerMatch(false));
+
+  $("play-count-sequence").addEventListener("click", playCountSequence);
+  $("next-count").addEventListener("click", nextCount);
+
+  $("play-match-target").addEventListener("click", playMatchTarget);
+  $("play-match-player").addEventListener("click", playMatchPlayer);
+  $("play-match-compare").addEventListener("click", playMatchCompareOnce);
+  $("submit-match").addEventListener("click", submitMatch);
   $("next-match").addEventListener("click", nextMatch);
-  $("replay-button").addEventListener("click", () => lastMode === "match" ? startMatch() : startTuning(lastMode));
-  addEventListener("pagehide", stopAllPlayback);
-  updateProgress("noop", 0);
+
+  $("replay-button").addEventListener("click", () => {
+    if (typeof lastReplay === "function") lastReplay();
+  });
+
+  $("open-certificate-top").addEventListener("click", () => {
+    show("screen-certificate");
+  });
+
+  $("open-certificate-result").addEventListener("click", () => {
+    show("screen-certificate");
+  });
+
+  updateProgressUI();
 })();

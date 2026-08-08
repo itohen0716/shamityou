@@ -597,3 +597,9 @@ button:disabled { cursor: default; opacity: .5; }
   margin-top: 10px;
   margin-bottom: 10px;
 }
+
+#play-count-answer {
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+}

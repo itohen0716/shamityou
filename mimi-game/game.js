@@ -466,7 +466,10 @@
     countAnswerLoopTimer = 0;
 
     $("count-prompt").textContent = `${countGame.targetHon}本は、どれ？`;
-    $("play-count-answer").classList.add("hidden");
+    const answerPlayButton = $("play-count-answer");
+    answerPlayButton.classList.add("hidden");
+    answerPlayButton.hidden = true;
+    answerPlayButton.style.display = "none";
     $("next-count").classList.add("hidden");
 
     buildCountLabels(false);
@@ -629,8 +632,11 @@
 
     buildCountLabels(true);
 
-    $("play-count-answer").textContent = `♪ ${countGame.targetHon}本の音だけを聴く`;
-    $("play-count-answer").classList.remove("hidden");
+    const answerPlayButton = $("play-count-answer");
+    answerPlayButton.textContent = `♪ ${countGame.targetHon}本の音だけを聴く`;
+    answerPlayButton.classList.remove("hidden");
+    answerPlayButton.hidden = false;
+    answerPlayButton.style.display = "inline-flex";
 
     if (correct) {
       countGame.score += 1;

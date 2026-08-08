@@ -415,12 +415,22 @@
       .slice(0, level.count);
   }
 
-  function startCount(levelKey) {
+  async function startCount(levelKey) {
     const level = COUNT_LEVELS[levelKey];
     if (!level) return;
 
     if (levelKey === "master" && !progress.countMasterUnlocked) return;
     if (levelKey === "super" && !progress.countSuperUnlocked) return;
+
+    // スマホブラウザの自動再生制限対策。
+    // 難易度ボタンを押した瞬間（ユーザー操作中）にAudioContextを起動しておく。
+    try {
+      await engine.resume();
+      await engine.load();
+    } catch (error) {
+      window.alert(error?.message || "先生音源を読み込めませんでした。");
+      return;
+    }
 
     lastReplay = () => startCount(levelKey);
 
@@ -459,10 +469,13 @@
     countStats();
     setMessage("count", "音が自動で順番に流れます。よく聴いて答えてね。");
 
-    // 画面描画後に自動再生。
+    // AudioContext は難易度選択時に起動済み。
+    // 描画が見えてから A→B→C… を自動再生する。
     window.setTimeout(() => {
-      if (!countGame.answered) playCountSequence();
-    }, 450);
+      if (!countGame.answered && !countGame.playing) {
+        playCountSequence();
+      }
+    }, 250);
   }
 
   function labelName(index) {
@@ -512,7 +525,9 @@
   }
 
   async function playCountSequence() {
-    if (countGame.playing || countGame.answered) return;
+    // 回答後も「もう一度聴く」で正解の並びを確認できる。
+    // 再生中の二重押しだけを防止する。
+    if (countGame.playing) return;
 
     countGame.playing = true;
     const token = ++countPlaybackToken;
@@ -523,7 +538,7 @@
 
     try {
       for (let index = 0; index < countGame.notes.length; index += 1) {
-        if (token !== countPlaybackToken || countGame.answered) return;
+        if (token !== countPlaybackToken) return;
 
         labels.forEach((label, i) => {
           label.classList.toggle("playing", i === index);
@@ -534,7 +549,7 @@
           exclusive: true
         });
 
-        if (token !== countPlaybackToken || countGame.answered) return;
+        if (token !== countPlaybackToken) return;
 
         const waitMs = Number.isFinite(durationSeconds)
           ? Math.max(700, durationSeconds * 1000 + 220)

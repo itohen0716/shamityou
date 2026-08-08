@@ -79,6 +79,7 @@
 
   let tuningLoopTimer = 0;
   let countPlaybackToken = 0;
+  let countAnswerLoopTimer = 0;
   let matchTimer = 0;
   let compareTimer = 0;
 
@@ -198,6 +199,8 @@
     tuningLoopTimer = 0;
 
     countPlaybackToken += 1;
+    clearTimeout(countAnswerLoopTimer);
+    countAnswerLoopTimer = 0;
 
     clearInterval(matchTimer);
     matchTimer = 0;
@@ -459,8 +462,11 @@
     countGame.targetHon = countGame.notes[countGame.targetIndex];
     countGame.answered = false;
     countGame.playing = false;
+    clearTimeout(countAnswerLoopTimer);
+    countAnswerLoopTimer = 0;
 
     $("count-prompt").textContent = `${countGame.targetHon}本は、どれ？`;
+    $("play-count-answer").classList.add("hidden");
     $("next-count").classList.add("hidden");
 
     buildCountLabels(false);
@@ -571,6 +577,40 @@
     }
   }
 
+  async function playCountCorrectLoop() {
+    clearTimeout(countAnswerLoopTimer);
+    countAnswerLoopTimer = 0;
+
+    if (!countGame.answered) return;
+
+    const token = ++countPlaybackToken;
+    const labels = [...$("count-sound-labels").querySelectorAll(".sound-label")];
+
+    const cycle = async () => {
+      if (!countGame.answered || token !== countPlaybackToken) return;
+
+      labels.forEach((label, index) => {
+        label.classList.toggle("playing", index === countGame.targetIndex);
+      });
+
+      try {
+        const duration = await playHonNumber(countGame.targetHon, { exclusive: true });
+        if (!countGame.answered || token !== countPlaybackToken) return;
+
+        const waitMs = Number.isFinite(duration)
+          ? Math.max(750, duration * 1000 + 350)
+          : 1100;
+
+        countAnswerLoopTimer = window.setTimeout(cycle, waitMs);
+      } catch (error) {
+        labels.forEach((label) => label.classList.remove("playing"));
+        setMessage("count", error?.message || "音を再生できませんでした。", "timeup");
+      }
+    };
+
+    cycle();
+  }
+
   function answerCount(index) {
     if (countGame.answered || countGame.playing) return;
 
@@ -588,6 +628,9 @@
     });
 
     buildCountLabels(true);
+
+    $("play-count-answer").textContent = `♪ ${countGame.targetHon}本の音だけを聴く`;
+    $("play-count-answer").classList.remove("hidden");
 
     if (correct) {
       countGame.score += 1;
@@ -623,6 +666,11 @@
   }
 
   function nextCount() {
+    clearTimeout(countAnswerLoopTimer);
+    countAnswerLoopTimer = 0;
+    countPlaybackToken += 1;
+    engine.stopAll();
+
     if (countGame.question >= TOTAL) {
       finishGame(
         `何本か当てる・${countGame.level.label}`,
@@ -901,6 +949,7 @@
   $("next-tuning").addEventListener("click", nextTuning);
 
   $("play-count-sequence").addEventListener("click", playCountSequence);
+  $("play-count-answer").addEventListener("click", playCountCorrectLoop);
   $("next-count").addEventListener("click", nextCount);
 
   $("play-match-target").addEventListener("click", playMatchTarget);

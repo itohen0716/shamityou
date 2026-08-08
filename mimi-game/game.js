@@ -252,8 +252,12 @@
   }
 
   async function playHonNumber(hon, options = {}) {
-    const entry = master.get(hon, "hon");
-    return playFrequency(entry.frequencies[0], options);
+    // teacher-1to12-octave.wav の前半1〜12音は、一の糸の1〜12本に対応。
+    // engine.play() は再生時間（秒）を返すため、順次再生の待機時間に利用できる。
+    return engine.play(hon, {
+      volume: 1,
+      ...options
+    });
   }
 
   // ---------- ① 調子を当てる ----------
@@ -453,7 +457,12 @@
     buildCountAnswerButtons();
 
     countStats();
-    setMessage("count", "Aから順番に音を聴いて答えてね。");
+    setMessage("count", "音が自動で順番に流れます。よく聴いて答えてね。");
+
+    // 画面描画後に自動再生。
+    window.setTimeout(() => {
+      if (!countGame.answered) playCountSequence();
+    }, 450);
   }
 
   function labelName(index) {
@@ -507,27 +516,43 @@
 
     countGame.playing = true;
     const token = ++countPlaybackToken;
-
     const labels = [...$("count-sound-labels").querySelectorAll(".sound-label")];
+
+    $("play-count-sequence").disabled = true;
+    $("play-count-sequence").textContent = "♪ 再生中…";
 
     try {
       for (let index = 0; index < countGame.notes.length; index += 1) {
-        if (token !== countPlaybackToken) return;
+        if (token !== countPlaybackToken || countGame.answered) return;
 
         labels.forEach((label, i) => {
           label.classList.toggle("playing", i === index);
         });
 
-        const duration = await playHonNumber(countGame.notes[index], { exclusive: true });
+        // A→B→C…を必ず1音ずつ最後まで再生する。
+        const durationSeconds = await playHonNumber(countGame.notes[index], {
+          exclusive: true
+        });
 
-        if (token !== countPlaybackToken) return;
-        await wait(Math.max(120, duration * 1000 + 140));
+        if (token !== countPlaybackToken || countGame.answered) return;
+
+        const waitMs = Number.isFinite(durationSeconds)
+          ? Math.max(700, durationSeconds * 1000 + 220)
+          : 1000;
+
+        await wait(waitMs);
       }
     } catch (error) {
-      setMessage("count", error.message || "音を再生できませんでした。", "timeup");
+      setMessage(
+        "count",
+        error?.message || "音を再生できませんでした。",
+        "timeup"
+      );
     } finally {
       labels.forEach((label) => label.classList.remove("playing"));
       countGame.playing = false;
+      $("play-count-sequence").disabled = false;
+      $("play-count-sequence").textContent = "♪ もう一度聴く";
     }
   }
 

@@ -976,5 +976,210 @@
     show("screen-certificate");
   });
 
+
+  // ---------- 本数のおさらい モーダル ----------
+
+  const REVIEW_NOTE_LABELS = {
+    1: "ラ",
+    2: "ラ♯",
+    3: "シ",
+    4: "ド",
+    5: "ド♯",
+    6: "レ",
+    7: "レ♯",
+    8: "ミ",
+    9: "ファ",
+    10: "ファ♯",
+    11: "ソ",
+    12: "ソ♯"
+  };
+
+  let reviewPlaybackToken = 0;
+  let reviewLoopTimer = 0;
+  let reviewMode = "idle";
+  let reviewCurrentHon = null;
+
+  function reviewKeys() {
+    return [...document.querySelectorAll("[data-review-hon]")];
+  }
+
+  function reviewNumberButtons() {
+    return [...document.querySelectorAll(".review-number-button")];
+  }
+
+  function clearReviewPlaying() {
+    reviewKeys().forEach((key) => key.classList.remove("playing"));
+    reviewNumberButtons().forEach((button) => button.classList.remove("playing"));
+  }
+
+  function markReviewPlaying(hon) {
+    clearReviewPlaying();
+
+    document
+      .querySelector(`.review-key[data-review-hon="${hon}"]`)
+      ?.classList.add("playing");
+
+    document
+      .querySelector(`.review-number-button[data-hon="${hon}"]`)
+      ?.classList.add("playing");
+  }
+
+  function stopReviewPlayback(message = "停止しました。") {
+    reviewPlaybackToken += 1;
+    clearTimeout(reviewLoopTimer);
+    reviewLoopTimer = 0;
+    reviewMode = "idle";
+    reviewCurrentHon = null;
+    engine.stopAll();
+    clearReviewPlaying();
+    $("review-play-all").disabled = false;
+    $("review-status").textContent = message;
+  }
+
+  async function ensureReviewAudio() {
+    await engine.resume();
+    await engine.load();
+  }
+
+  async function startReviewSingleLoop(hon) {
+    stopReviewPlayback("");
+    await ensureReviewAudio();
+
+    const token = ++reviewPlaybackToken;
+    reviewMode = "single";
+    reviewCurrentHon = hon;
+
+    const cycle = async () => {
+      if (token !== reviewPlaybackToken || reviewMode !== "single") return;
+
+      markReviewPlaying(hon);
+      $("review-status").textContent =
+        `${hon}本（${REVIEW_NOTE_LABELS[hon]}）を繰り返し再生しています。`;
+
+      try {
+        const duration = await engine.play(hon, {
+          exclusive: true,
+          volume: 1
+        });
+
+        if (token !== reviewPlaybackToken || reviewMode !== "single") return;
+
+        const waitMs = Number.isFinite(duration)
+          ? Math.max(750, duration * 1000 + 350)
+          : 1100;
+
+        reviewLoopTimer = window.setTimeout(cycle, waitMs);
+      } catch (error) {
+        stopReviewPlayback(error?.message || "音を再生できませんでした。");
+      }
+    };
+
+    cycle();
+  }
+
+  async function startReviewAll() {
+    stopReviewPlayback("");
+    await ensureReviewAudio();
+
+    const token = ++reviewPlaybackToken;
+    reviewMode = "all";
+    $("review-play-all").disabled = true;
+
+    try {
+      for (let hon = 1; hon <= 12; hon += 1) {
+        if (token !== reviewPlaybackToken || reviewMode !== "all") return;
+
+        markReviewPlaying(hon);
+        $("review-status").textContent =
+          `${hon}本（${REVIEW_NOTE_LABELS[hon]}）を再生中`;
+
+        const duration = await engine.play(hon, {
+          exclusive: true,
+          volume: 1
+        });
+
+        const waitMs = Number.isFinite(duration)
+          ? Math.max(750, duration * 1000 + 260)
+          : 1000;
+
+        await wait(waitMs);
+      }
+
+      if (token === reviewPlaybackToken && reviewMode === "all") {
+        clearReviewPlaying();
+        reviewMode = "idle";
+        $("review-play-all").disabled = false;
+        $("review-status").textContent = "1本から12本までの連続再生が終わりました。";
+      }
+    } catch (error) {
+      stopReviewPlayback(error?.message || "音を再生できませんでした。");
+    }
+  }
+
+  function openReviewModal() {
+    stopAll();
+
+    $("review-modal").classList.remove("hidden");
+    document.body.classList.add("review-open");
+    $("review-status").textContent =
+      "鍵盤を押すと、その1音を繰り返し再生します。";
+
+    // モーダルを開くタップを音声利用のユーザー操作として使う
+    engine.resume().then(() => engine.load()).catch((error) => {
+      $("review-status").textContent =
+        error?.message || "先生音源を読み込めませんでした。";
+    });
+  }
+
+  function closeReviewModal() {
+    stopReviewPlayback("");
+    $("review-modal").classList.add("hidden");
+    document.body.classList.remove("review-open");
+  }
+
+  function buildReviewNumberButtons() {
+    const container = $("review-number-grid");
+    container.replaceChildren();
+
+    for (let hon = 1; hon <= 12; hon += 1) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "review-number-button";
+      button.dataset.hon = String(hon);
+
+      const main = document.createElement("span");
+      main.textContent = `${hon}本`;
+
+      const sub = document.createElement("small");
+      sub.textContent = REVIEW_NOTE_LABELS[hon];
+
+      button.append(main, sub);
+      button.addEventListener("click", () => startReviewSingleLoop(hon));
+      container.appendChild(button);
+    }
+  }
+
+  $("open-review-modal").addEventListener("click", openReviewModal);
+  $("review-play-all").addEventListener("click", startReviewAll);
+  $("review-stop").addEventListener("click", () => stopReviewPlayback());
+
+  document.querySelectorAll("[data-review-close]").forEach((button) => {
+    button.addEventListener("click", closeReviewModal);
+  });
+
+  reviewKeys().forEach((key) => {
+    key.addEventListener("click", () => {
+      startReviewSingleLoop(Number(key.dataset.reviewHon));
+    });
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && !$("review-modal").classList.contains("hidden")) {
+      closeReviewModal();
+    }
+  });
+
+  buildReviewNumberButtons();
+
   updateProgressUI();
 })();

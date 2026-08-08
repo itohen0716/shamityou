@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#f7f2e8">
   <title>耳を育てる｜絲庵</title>
-  <link rel="stylesheet" href="./game.css?v=106">
+  <link rel="stylesheet" href="./game.css?v=107">
 </head>
 <body>
   <main class="app-shell">
@@ -173,10 +173,10 @@
 
         <p id="count-lock-note" class="lock-note">難しいをクリアすると、達人への道が開きます。</p>
 
-        <a class="review-link" href="./review.html" target="_blank" rel="noopener">
+        <button type="button" class="review-link" id="open-review-modal">
           ♪ おさらい
           <small>1本〜12本の音を確認する</small>
-        </a>
+        </button>
       </div>
     </section>
 
@@ -326,12 +326,63 @@
       </article>
     </section>
 
+
+    <!-- 本数のおさらい モーダル -->
+    <div id="review-modal" class="review-modal hidden" role="dialog" aria-modal="true" aria-labelledby="review-modal-title">
+      <div class="review-modal-backdrop" data-review-close></div>
+
+      <section class="review-modal-panel">
+        <div class="review-modal-head">
+          <div>
+            <p class="review-eyebrow">② 何本か当てる</p>
+            <h2 id="review-modal-title">本数のおさらい</h2>
+            <p>三味線の「○本」と、なじみのあるドレミを一緒に確認できます。</p>
+          </div>
+          <button type="button" class="review-close-button" data-review-close aria-label="閉じる">×</button>
+        </div>
+
+        <div class="review-controls">
+          <button type="button" id="review-play-all" class="primary-button">
+            ♪ 1本から12本まで順番に聴く
+          </button>
+          <button type="button" id="review-stop" class="secondary-button">
+            ■ 停止
+          </button>
+        </div>
+
+        <p id="review-status" class="review-status" aria-live="polite">
+          鍵盤を押すと、その1音を繰り返し再生します。
+        </p>
+
+        <div class="review-piano-wrap">
+          <div class="review-piano" id="review-piano">
+            <button type="button" class="review-key white" data-review-hon="1" style="--white-index:0"><span class="note">A</span><span class="kana">ラ</span><strong>1本</strong></button>
+            <button type="button" class="review-key black" data-review-hon="2" style="--black-left:11.8%"><span class="note">A♯</span><span class="kana">ラ♯</span><strong>2本</strong></button>
+            <button type="button" class="review-key white" data-review-hon="3" style="--white-index:1"><span class="note">B</span><span class="kana">シ</span><strong>3本</strong></button>
+            <button type="button" class="review-key white" data-review-hon="4" style="--white-index:2"><span class="note">C</span><span class="kana">ド</span><strong>4本</strong></button>
+            <button type="button" class="review-key black" data-review-hon="5" style="--black-left:40.4%"><span class="note">C♯</span><span class="kana">ド♯</span><strong>5本</strong></button>
+            <button type="button" class="review-key white" data-review-hon="6" style="--white-index:3"><span class="note">D</span><span class="kana">レ</span><strong>6本</strong></button>
+            <button type="button" class="review-key black" data-review-hon="7" style="--black-left:54.7%"><span class="note">D♯</span><span class="kana">レ♯</span><strong>7本</strong></button>
+            <button type="button" class="review-key white" data-review-hon="8" style="--white-index:4"><span class="note">E</span><span class="kana">ミ</span><strong>8本</strong></button>
+            <button type="button" class="review-key white" data-review-hon="9" style="--white-index:5"><span class="note">F</span><span class="kana">ファ</span><strong>9本</strong></button>
+            <button type="button" class="review-key black" data-review-hon="10" style="--black-left:83.3%"><span class="note">F♯</span><span class="kana">ファ♯</span><strong>10本</strong></button>
+            <button type="button" class="review-key white" data-review-hon="11" style="--white-index:6"><span class="note">G</span><span class="kana">ソ</span><strong>11本</strong></button>
+            <button type="button" class="review-key black final-black" data-review-hon="12"><span class="note">G♯</span><span class="kana">ソ♯</span><strong>12本</strong></button>
+          </div>
+        </div>
+
+        <div class="review-number-grid" id="review-number-grid" aria-label="1本から12本の音"></div>
+
+        <button type="button" class="review-bottom-close" data-review-close>閉じる</button>
+      </section>
+    </div>
+
   </main>
 
   <!-- 既存アプリのマスター音源・調弦データを共有 -->
   <script src="../tuning-data.js?v=410"></script>
   <script src="../sound-segments.js?v=410"></script>
   <script src="../audio-engine.js?v=410"></script>
-  <script src="./game.js?v=106"></script>
+  <script src="./game.js?v=107"></script>
 </body>
 </html>

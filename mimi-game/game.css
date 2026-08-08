@@ -603,3 +603,22 @@ button:disabled { cursor: default; opacity: .5; }
   align-items: center;
   justify-content: center;
 }
+
+.review-link {
+  display: grid;
+  gap: 3px;
+  width: 100%;
+  margin-top: 16px;
+  padding: 13px 16px;
+  border: 1px solid var(--accent);
+  border-radius: 16px;
+  background: white;
+  color: var(--accent-dark);
+  text-decoration: none;
+  text-align: center;
+  font-weight: 900;
+}
+.review-link small {
+  color: var(--muted);
+  font-weight: 600;
+}

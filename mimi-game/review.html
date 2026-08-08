@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#f7f2e8">
+  <title>本数のおさらい｜絲庵</title>
+  <link rel="stylesheet" href="./review.css?v=100">
+</head>
+<body>
+  <main class="review-app">
+    <header class="review-header">
+      <button type="button" id="close-window" class="back-button">× 閉じる</button>
+      <div>
+        <p class="eyebrow">② 何本か当てる</p>
+        <h1>本数のおさらい</h1>
+        <p>一の糸の1本〜12本を、音と位置で確認できます。</p>
+      </div>
+    </header>
+
+    <section class="control-panel">
+      <h2>聴き方を選ぶ</h2>
+      <div class="mode-buttons">
+        <button type="button" id="play-all" class="primary-button">♪ 1本から12本まで連続再生</button>
+        <button type="button" id="stop-all" class="secondary-button">■ 停止</button>
+      </div>
+      <p id="status" class="status" aria-live="polite">連続再生、または下の鍵盤を押して1音ずつ確認できます。</p>
+    </section>
+
+    <section class="keyboard-panel">
+      <h2>1本〜12本</h2>
+      <p class="keyboard-help">鳴っている音は色が変わります。各鍵盤を押すと、その音だけ確認できます。</p>
+      <div class="piano-wrap">
+        <div class="piano" id="piano" role="group" aria-label="1本から12本の音">
+          <button type="button" class="key white" data-hon="1" style="--white-index:0"><span class="note">A</span><span class="kana">ラ</span><strong>1本</strong></button>
+          <button type="button" class="key black" data-hon="2" style="--black-left:11.8%"><span class="note">A♯</span><strong>2本</strong></button>
+          <button type="button" class="key white" data-hon="3" style="--white-index:1"><span class="note">B</span><span class="kana">シ</span><strong>3本</strong></button>
+          <button type="button" class="key white" data-hon="4" style="--white-index:2"><span class="note">C</span><span class="kana">ド</span><strong>4本</strong></button>
+          <button type="button" class="key black" data-hon="5" style="--black-left:40.4%"><span class="note">C♯</span><strong>5本</strong></button>
+          <button type="button" class="key white" data-hon="6" style="--white-index:3"><span class="note">D</span><span class="kana">レ</span><strong>6本</strong></button>
+          <button type="button" class="key black" data-hon="7" style="--black-left:54.7%"><span class="note">D♯</span><strong>7本</strong></button>
+          <button type="button" class="key white" data-hon="8" style="--white-index:4"><span class="note">E</span><span class="kana">ミ</span><strong>8本</strong></button>
+          <button type="button" class="key white" data-hon="9" style="--white-index:5"><span class="note">F</span><span class="kana">ファ</span><strong>9本</strong></button>
+          <button type="button" class="key black" data-hon="10" style="--black-left:83.3%"><span class="note">F♯</span><strong>10本</strong></button>
+          <button type="button" class="key white" data-hon="11" style="--white-index:6"><span class="note">G</span><span class="kana">ソ</span><strong>11本</strong></button>
+          <button type="button" class="key black final-black" data-hon="12"><span class="note">G♯</span><strong>12本</strong></button>
+        </div>
+      </div>
+    </section>
+
+    <section class="quick-grid-panel">
+      <h2>ボタンで1音確認</h2>
+      <div class="quick-grid" id="quick-grid"></div>
+    </section>
+  </main>
+  <script src="../sound-segments.js?v=410"></script>
+  <script src="../audio-engine.js?v=410"></script>
+  <script src="./review.js?v=100"></script>
+</body>
+</html>

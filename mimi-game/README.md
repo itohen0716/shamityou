@@ -121,3 +121,8 @@ PWAのService Workerが古いファイルを保持している場合、GitHub Pa
 - 「■ 停止」で停止
 - 「×」「閉じる」「背景タップ」「Esc」でポップアップを閉じる
 - review.html / review.css / review.js は廃止し、mimi-game/index.html 内へ統合
+
+## Ver.1.0.8 追加
+- `certificate-preview.html` を追加
+- 全クリアしなくても認定画面の見た目だけ直接確認可能
+- 認定証、Lv.5達人、シャミ、認定メッセージ、戻るボタンを本番イメージとして表示

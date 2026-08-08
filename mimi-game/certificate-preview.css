@@ -1,0 +1,113 @@
+:root {
+  --bg:#f7f2e8;
+  --panel:#fffdf8;
+  --ink:#2e2924;
+  --muted:#746a60;
+  --line:#ded2c4;
+  --accent:#3f7b68;
+  --accent-dark:#2f6152;
+  --gold:#c89f45;
+  --gold-soft:#fff3cd;
+  --brown:#795548;
+  --shadow:0 12px 30px rgba(57,44,32,.12);
+}
+*{box-sizing:border-box}
+body{
+  margin:0;
+  min-height:100vh;
+  background:var(--bg);
+  color:var(--ink);
+  font-family:"Hiragino Kaku Gothic ProN","Yu Gothic","Noto Sans JP",sans-serif;
+}
+.preview-app{
+  width:min(100%,720px);
+  margin:0 auto;
+  padding:22px 14px 36px;
+}
+.back-link{
+  display:inline-flex;
+  min-height:44px;
+  align-items:center;
+  color:var(--brown);
+  text-decoration:none;
+  font-weight:800;
+  margin-bottom:14px;
+}
+.preview-card{
+  padding:18px;
+  border:1px solid var(--line);
+  border-radius:24px;
+  background:var(--panel);
+  box-shadow:var(--shadow);
+  text-align:center;
+}
+.preview-shami{
+  width:min(220px,56vw);
+  height:180px;
+  object-fit:contain;
+  margin:0 auto 4px;
+}
+.eyebrow{
+  margin:0 0 6px;
+  color:var(--accent-dark);
+  font-weight:800;
+}
+h1{
+  margin:0 0 10px;
+  font-size:clamp(2rem,8vw,3rem);
+}
+.lead{
+  margin:0 0 16px;
+  color:var(--muted);
+  line-height:1.7;
+}
+.certificate-figure{
+  margin:0;
+  padding:12px;
+  border:1px solid #dfc27a;
+  border-radius:18px;
+  background:var(--gold-soft);
+}
+.certificate-image{
+  display:block;
+  width:100%;
+  height:auto;
+  border-radius:10px;
+}
+.message{
+  margin:18px 0;
+  line-height:1.8;
+  font-weight:700;
+}
+.actions{
+  display:grid;
+  gap:10px;
+}
+.primary-button,
+.secondary-button{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  min-height:50px;
+  border-radius:999px;
+  text-decoration:none;
+  font-weight:800;
+}
+.primary-button{
+  background:var(--accent);
+  color:white;
+}
+.secondary-button{
+  border:1px solid var(--brown);
+  color:var(--brown);
+  background:white;
+}
+.note{
+  margin:16px 0 0;
+  color:var(--muted);
+  font-size:.84rem;
+}
+@media(max-width:480px){
+  .preview-card{padding:14px}
+  .preview-shami{height:155px}
+}

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#f7f2e8">
   <title>耳を育てる｜絲庵</title>
-  <link rel="stylesheet" href="./game.css?v=107">
+  <link rel="stylesheet" href="./game.css?v=109">
 </head>
 <body>
   <main class="app-shell">
@@ -72,6 +72,21 @@
           <span class="arrow" aria-hidden="true">›</span>
         </button>
       </div>
+
+      <section class="certificate-teaser" aria-labelledby="certificate-teaser-title">
+        <p id="certificate-teaser-title" class="certificate-teaser-label">
+          3つのゲームの最終目標をすべて達成すると、認定書発行！
+        </p>
+
+        <button type="button" id="open-certificate-preview" class="certificate-thumb-button">
+          <img
+            src="./images/certificate.png"
+            alt="三味線耳認定証の見本"
+            class="certificate-thumb"
+          >
+          <span>認定書の見本を見る</span>
+        </button>
+      </section>
     </section>
 
     <!-- ① 調子 難易度 -->
@@ -377,12 +392,32 @@
       </section>
     </div>
 
+
+    <!-- 認定書プレビュー ポップアップ -->
+    <div id="certificate-preview-modal" class="certificate-preview-modal hidden" role="dialog" aria-modal="true" aria-labelledby="certificate-preview-modal-title">
+      <div class="certificate-preview-backdrop" data-certificate-preview-close></div>
+
+      <section class="certificate-preview-panel">
+        <div class="certificate-preview-head">
+          <h2 id="certificate-preview-modal-title">三味線耳認定！</h2>
+          <button type="button" class="certificate-preview-close" data-certificate-preview-close aria-label="閉じる">×</button>
+        </div>
+
+        <iframe
+          id="certificate-preview-frame"
+          src="./certificate-preview.html"
+          title="三味線耳認定証プレビュー"
+          loading="lazy"
+        ></iframe>
+      </section>
+    </div>
+
   </main>
 
   <!-- 既存アプリのマスター音源・調弦データを共有 -->
   <script src="../tuning-data.js?v=410"></script>
   <script src="../sound-segments.js?v=410"></script>
   <script src="../audio-engine.js?v=410"></script>
-  <script src="./game.js?v=107"></script>
+  <script src="./game.js?v=109"></script>
 </body>
 </html>

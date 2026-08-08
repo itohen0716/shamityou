@@ -845,3 +845,116 @@ body.review-open {
     padding: 14px;
   }
 }
+
+
+/* トップ画面：認定書の案内 */
+.certificate-teaser {
+  margin-top: 22px;
+  padding: 16px;
+  border: 1px solid #d9c08a;
+  border-radius: 20px;
+  background: #fffaf0;
+  box-shadow: var(--shadow);
+  text-align: center;
+}
+
+.certificate-teaser-label {
+  margin: 0 0 12px;
+  color: #6b5326;
+  font-weight: 900;
+  line-height: 1.6;
+}
+
+.certificate-thumb-button {
+  display: grid;
+  gap: 8px;
+  width: 100%;
+  padding: 10px;
+  border: 0;
+  border-radius: 16px;
+  background: white;
+  color: var(--brown);
+  font-weight: 800;
+}
+
+.certificate-thumb {
+  display: block;
+  width: min(100%, 360px);
+  height: auto;
+  margin: 0 auto;
+  border: 1px solid #ddc68f;
+  border-radius: 10px;
+  box-shadow: 0 6px 16px rgba(70, 53, 29, .10);
+}
+
+/* 認定書プレビュー ポップアップ */
+.certificate-preview-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 10050;
+  display: grid;
+  place-items: center;
+  padding: 14px;
+}
+
+.certificate-preview-modal.hidden {
+  display: none !important;
+}
+
+.certificate-preview-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(38, 31, 26, .54);
+  backdrop-filter: blur(2px);
+}
+
+.certificate-preview-panel {
+  position: relative;
+  z-index: 1;
+  width: min(96vw, 760px);
+  height: min(92vh, 900px);
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  background: var(--panel);
+  box-shadow: 0 22px 60px rgba(35, 28, 22, .28);
+}
+
+.certificate-preview-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--line);
+  background: #fffaf0;
+}
+
+.certificate-preview-head h2 {
+  margin: 0;
+  color: #6b5326;
+  font-size: 1.1rem;
+}
+
+.certificate-preview-close {
+  width: 42px;
+  height: 42px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: white;
+  color: var(--brown);
+  font-size: 1.4rem;
+  font-weight: 900;
+}
+
+#certificate-preview-frame {
+  display: block;
+  width: 100%;
+  height: calc(100% - 67px);
+  border: 0;
+  background: var(--bg);
+}
+
+body.certificate-preview-open {
+  overflow: hidden;
+}

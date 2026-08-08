@@ -1181,5 +1181,33 @@
 
   buildReviewNumberButtons();
 
+
+  // ---------- 認定書プレビュー ポップアップ ----------
+
+  function openCertificatePreviewModal() {
+    $("certificate-preview-modal").classList.remove("hidden");
+    document.body.classList.add("certificate-preview-open");
+  }
+
+  function closeCertificatePreviewModal() {
+    $("certificate-preview-modal").classList.add("hidden");
+    document.body.classList.remove("certificate-preview-open");
+  }
+
+  $("open-certificate-preview").addEventListener("click", openCertificatePreviewModal);
+
+  document.querySelectorAll("[data-certificate-preview-close]").forEach((button) => {
+    button.addEventListener("click", closeCertificatePreviewModal);
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (
+      event.key === "Escape" &&
+      !$("certificate-preview-modal").classList.contains("hidden")
+    ) {
+      closeCertificatePreviewModal();
+    }
+  });
+
   updateProgressUI();
 })();

@@ -21,8 +21,8 @@
   const NEAR_CENTS = 15;
   const HOLD_MS = 1200;
   const TRANSITION_MS = 1500;
-  const MIN_FREQUENCY = 150;
-  const MAX_FREQUENCY = 1300;
+  const MIN_FREQUENCY = 70;
+  const MAX_FREQUENCY = 900;
 
   const NOTE_SHARP = ["C", "C♯", "D", "D♯", "E", "F", "F♯", "G", "G♯", "A", "A♯", "B"];
   const NOTE_FLAT = ["C", "D♭", "D", "E♭", "E", "F", "G♭", "G", "A♭", "A", "B♭", "B"];

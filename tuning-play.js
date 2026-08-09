@@ -3,6 +3,10 @@
 
   const TUNING_TOLERANCE_CENTS = 10;
   const REQUIRED_STABLE_MS = 1000;
+  const PITCH_DROPOUT_GRACE_MS = 350;
+  const MAX_STABLE_FRAME_MS = 80;
+  const SMOOTHING_ALPHA = 0.28;
+  const REFERENCE_INTERVAL_MS = 4200;
 
   const ORDER = ["ichi", "ni", "san"];
   const LABELS = { ichi: "一の糸", ni: "二の糸", san: "三の糸" };
@@ -32,7 +36,8 @@
 
   let activeIndex = -1;
   let stream, analyser, micSource, rafId, referenceTimer;
-  let running = false, changing = false, suppressUntil = 0, voicedSince = 0, stableSince = 0;
+  let running = false, changing = false, suppressUntil = 0, voicedSince = 0;
+  let stableDuration = 0, lastInTuneAt = 0, lastValidPitchAt = 0, smoothedFrequency = 0;
 
   function setFeedback(kind, message, judgement = message, ok = false) {
     els.expression.src = `./images/expressions/${EXPRESSIONS[kind]}`;
@@ -82,13 +87,18 @@
     stopReference();
     els.mic.textContent = "基準音を再生中";
     playReference().catch(handleError);
-    referenceTimer = window.setInterval(() => playReference().catch(handleError), 3000);
+    referenceTimer = window.setInterval(() => playReference().catch(handleError), REFERENCE_INTERVAL_MS);
   }
   async function ensureMicrophone() {
     if (stream?.active) return;
     if (!navigator.mediaDevices?.getUserMedia) throw new Error("マイクを利用できません。");
     stream = await navigator.mediaDevices.getUserMedia({
-      audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: false },
+      audio: {
+        echoCancellation: false,
+        noiseSuppression: false,
+        autoGainControl: false,
+        channelCount: 1
+      },
       video: false
     });
     const ctx = await window.ShianAudioEngine.resume();
@@ -99,7 +109,25 @@
   }
   function resetStability() {
     voicedSince = 0;
-    stableSince = 0;
+    stableDuration = 0;
+    lastInTuneAt = 0;
+    lastValidPitchAt = 0;
+    smoothedFrequency = 0;
+  }
+  function resetStableDuration() {
+    stableDuration = 0;
+    lastInTuneAt = 0;
+  }
+  function smoothPitch(frequency) {
+    if (!smoothedFrequency) {
+      smoothedFrequency = frequency;
+      return smoothedFrequency;
+    }
+    const jump = Math.abs(1200 * Math.log2(frequency / smoothedFrequency));
+    smoothedFrequency = jump > 120
+      ? frequency
+      : smoothedFrequency * (1 - SMOOTHING_ALPHA) + frequency * SMOOTHING_ALPHA;
+    return smoothedFrequency;
   }
   function pitchLoop() {
     cancelAnimationFrame(rafId);
@@ -120,30 +148,34 @@
       }
       const pitch = window.ShianPitch.autoCorrelate(data, ctx.sampleRate);
       if (pitch.frequency < 0 || pitch.clarity < 0.45) {
-        resetStability();
+        if (lastValidPitchAt && now - lastValidPitchAt > PITCH_DROPOUT_GRACE_MS) {
+          voicedSince = 0;
+          smoothedFrequency = 0;
+          resetStableDuration();
+        }
         els.mic.textContent = "糸を弾いてください";
         rafId = requestAnimationFrame(tick);
         return;
       }
+      lastValidPitchAt = now;
       if (!voicedSince) voicedSince = now;
-      let cents = 1200 * Math.log2(pitch.frequency / notes[activeIndex]);
-      while (cents > 600) cents -= 1200;
-      while (cents < -600) cents += 1200;
+      const measuredFrequency = smoothPitch(pitch.frequency);
+      const cents = 1200 * Math.log2(measuredFrequency / notes[activeIndex]);
       setNeedle(cents);
-      els.measuredHz.textContent = master.formatHz(pitch.frequency).replace(" ", "");
+      els.measuredHz.textContent = master.formatHz(measuredFrequency).replace(" ", "");
       els.mic.textContent = `${LABELS[ORDER[activeIndex]]}を測定中`;
 
       // 弾き始めの250msはアタックとして判定から除外する。
       if (now - voicedSince < 250) {
-        stableSince = 0;
+        resetStableDuration();
         setFeedback("listening", "音が落ち着くのを待っています", "アタックを除外中");
       } else if (isInTune(cents)) {
-        if (!stableSince) stableSince = now;
-        const elapsed = now - stableSince;
+        if (lastInTuneAt) stableDuration += Math.min(now - lastInTuneAt, MAX_STABLE_FRAME_MS);
+        lastInTuneAt = now;
         setFeedback("ok", "そのまま保ってね", "合っています", true);
-        if (elapsed >= REQUIRED_STABLE_MS) matched();
+        if (stableDuration >= REQUIRED_STABLE_MS) void matched();
       } else {
-        stableSince = 0;
+        resetStableDuration();
         const low = cents < 0;
         setFeedback("adjust", low ? "もう少し高くしてみよう" : "もう少し低くしてみよう", low ? "少し低いです" : "少し高いです");
       }

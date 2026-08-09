@@ -1,10 +1,10 @@
-const CACHE_NAME = "shian-shamisen-v4.1-r3";
+const CACHE_NAME = "shian-shamisen-v4.1-r4";
 const APP_SHELL = [
   "./","./index.html","./tuning.html","./tuning-play.html","./style.css?v=412",
-  "./home.js?v=410","./setup.js?v=410","./tuner.js?v=410","./sound-segments.js?v=410",
-  "./tuning-data.js?v=410","./tuning-master.json","./audio-engine.js?v=410","./tuning-play.js?v=412",
+  "./home.js?v=410","./setup.js?v=410","./tuner.js?v=413","./sound-segments.js?v=410",
+  "./tuning-data.js?v=410","./tuning-master.json","./audio-engine.js?v=411","./tuning-play.js?v=413",
   "./mimi-game/index.html","./mimi-game/game.css?v=411","./mimi-game/game.js?v=411",
-  "./tuner/index.html","./tuner/style.css","./tuner/app.js?v=410",
+  "./tuner/index.html","./tuner/style.css","./tuner/app.js?v=411",
   "./manifest.webmanifest","./sounds/teacher-1to12-octave.wav",
   "./images/home/shami-home.png","./images/home/icon-tuning.png","./images/home/icon-ear.png","./images/home/tyu.png","./images/home/icon-erika.png",
   "./images/buttons/hon.png","./images/buttons/niage.png","./images/buttons/sansage.png",

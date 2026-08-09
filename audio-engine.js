@@ -115,13 +115,21 @@
     const target = Number(frequency);
     const master = window.ShianTuningMaster;
     if (!Number.isFinite(target) || !master) throw new Error("調弦データから音を取得できません。");
-    const sources = master.entries.filter((entry) => entry.mode === "hon");
-    const source = sources.reduce((best, entry) =>
-      Math.abs(Math.log2(target / entry.frequencies[0])) < Math.abs(Math.log2(target / best.frequencies[0])) ? entry : best
+    const sources = master.entries
+      .filter((entry) => entry.mode === "hon")
+      .flatMap((entry) => [
+        { noteNumber: entry.count, frequency: entry.frequencies[0] },
+        { noteNumber: entry.count + 12, frequency: entry.frequencies[0] * 2 }
+      ]);
+    if (!sources.length) throw new Error("先生音源に対応する調弦データがありません。");
+    const source = sources.reduce((best, candidate) =>
+      Math.abs(Math.log2(target / candidate.frequency)) < Math.abs(Math.log2(target / best.frequency))
+        ? candidate
+        : best
     );
-    return playSegment(source.count, {
+    return playSegment(source.noteNumber, {
       ...options,
-      playbackRate: (Number(options.playbackRate) || 1) * target / source.frequencies[0]
+      playbackRate: (Number(options.playbackRate) || 1) * target / source.frequency
     });
   }
 

@@ -319,8 +319,21 @@
 
     for (let i = 0; i < entry.frequencies.length; i += 1) {
       try {
-        await playFrequency(entry.frequencies[i], { exclusive: true });
-        await wait(180);
+        const voice = await playFrequency(entry.frequencies[i], { exclusive: true });
+
+        // その音が最後まで鳴り終わってから次へ進む。
+        if (voice?.ended) {
+          await voice.ended;
+        } else if (Number.isFinite(voice?.duration)) {
+          await wait(voice.duration * 1000);
+        } else {
+          await wait(1000);
+        }
+
+        // 1音ごとの間隔を明確に空ける。
+        if (i < entry.frequencies.length - 1) {
+          await wait(800);
+        }
       } catch (error) {
         setMessage("tuning", error.message || "音を再生できませんでした。", "timeup");
         break;
@@ -335,12 +348,14 @@
       if (tuning.answered || !tuning.level.autoLoop) return;
 
       await playTuningOnce();
-      if (!tuning.answered) {
-        tuningLoopTimer = window.setTimeout(cycle, 500);
+
+      if (!tuning.answered && tuning.level.autoLoop) {
+        // 3音セットを聴き終えて考える時間を取る。
+        tuningLoopTimer = window.setTimeout(cycle, 2200);
       }
     };
 
-    setMessage("tuning", "問題音を繰り返し再生しています。");
+    setMessage("tuning", "問題音をゆっくり繰り返し再生しています。");
     cycle();
   }
 
@@ -1218,6 +1233,33 @@
       closeCertificatePreviewModal();
     }
   });
+
+
+  // ページを離れたら必ずすべての音を止める。
+  window.addEventListener("pagehide", () => {
+    stopAll();
+  });
+
+  window.addEventListener("beforeunload", () => {
+    stopAll();
+  });
+
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) {
+      stopAll();
+    }
+  });
+
+  // アプリ内リンクで別ページへ移動する場合も、遷移直前に停止する。
+  document.addEventListener("click", (event) => {
+    const link = event.target.closest("a[href]");
+    if (!link) return;
+
+    const href = link.getAttribute("href");
+    if (!href || href.startsWith("#") || link.target === "_blank") return;
+
+    stopAll();
+  }, true);
 
   updateProgressUI();
 })();

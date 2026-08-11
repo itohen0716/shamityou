@@ -76,6 +76,7 @@
   let match = {};
   let lastReplay = null;
 
+  let playbackGeneration = 0;
   let tuningLoopTimer = 0;
   let countPlaybackToken = 0;
   let countAnswerLoopTimer = 0;
@@ -191,6 +192,9 @@
   }
 
   function stopAll() {
+    // await中の自動再生処理も含めて無効化する。
+    playbackGeneration += 1;
+
     clearTimeout(tuningLoopTimer);
     tuningLoopTimer = 0;
 
@@ -204,7 +208,8 @@
     clearInterval(compareTimer);
     compareTimer = 0;
 
-    engine.stopAll();
+    // 音声はフェード待ちせず即時停止。
+    engine.stopAll(0);
   }
 
   function show(id) {
@@ -313,13 +318,22 @@
     }
   }
 
-  async function playTuningOnce() {
-    engine.stopAll();
+  async function playTuningOnce(generation = playbackGeneration) {
+    if (generation !== playbackGeneration) return;
+
+    engine.stopAll(0);
     const entry = master.get(tuning.hon, tuning.key);
 
     for (let i = 0; i < entry.frequencies.length; i += 1) {
+      if (generation !== playbackGeneration || tuning.answered) return;
+
       try {
         const voice = await playFrequency(entry.frequencies[i], { exclusive: true });
+
+        if (generation !== playbackGeneration || tuning.answered) {
+          voice?.stop?.();
+          return;
+        }
 
         // その音が最後まで鳴り終わってから次へ進む。
         if (voice?.ended) {
@@ -330,13 +344,16 @@
           await wait(1000);
         }
 
-        // 1音ごとの間隔を明確に空ける。
+        if (generation !== playbackGeneration || tuning.answered) return;
+
         if (i < entry.frequencies.length - 1) {
           await wait(800);
+          if (generation !== playbackGeneration || tuning.answered) return;
         }
       } catch (error) {
+        if (generation !== playbackGeneration) return;
         setMessage("tuning", error.message || "音を再生できませんでした。", "timeup");
-        break;
+        return;
       }
     }
   }
@@ -344,15 +361,24 @@
   function startTuningLoop() {
     clearTimeout(tuningLoopTimer);
 
+    const generation = playbackGeneration;
+
     const cycle = async () => {
-      if (tuning.answered || !tuning.level.autoLoop) return;
+      if (
+        generation !== playbackGeneration ||
+        tuning.answered ||
+        !tuning.level.autoLoop
+      ) return;
 
-      await playTuningOnce();
+      await playTuningOnce(generation);
 
-      if (!tuning.answered && tuning.level.autoLoop) {
-        // 3音セットを聴き終えて考える時間を取る。
-        tuningLoopTimer = window.setTimeout(cycle, 2200);
-      }
+      if (
+        generation !== playbackGeneration ||
+        tuning.answered ||
+        !tuning.level.autoLoop
+      ) return;
+
+      tuningLoopTimer = window.setTimeout(cycle, 2200);
     };
 
     setMessage("tuning", "問題音をゆっくり繰り返し再生しています。");
@@ -1236,9 +1262,10 @@
 
 
   // ページを離れたら必ずすべての音を止める。
-  window.addEventListener("pagehide", () => {
-    stopAll();
-  });
+  window.addEventListener("pagehide", stopAll);
+  window.addEventListener("blur", stopAll);
+
+  document.addEventListener("freeze", stopAll);
 
   window.addEventListener("beforeunload", () => {
     stopAll();

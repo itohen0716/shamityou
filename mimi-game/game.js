@@ -22,23 +22,22 @@
     normal: { label: "普通", count: 5, consecutive: true },
     hard: { label: "難しい", count: 3, consecutive: false },
     master: { label: "達人", count: 4, consecutive: false },
-    super: { label: "超達人", count: 5, consecutive: false }
   };
 
   const MATCH_LEVELS = {
     easy: {
       label: "簡単",
-      time: 30,
+      time: 60,
       cents: [-200, -150, -100, 100, 150, 200]
     },
     normal: {
       label: "普通",
-      time: 20,
+      time: 40,
       cents: [-50, -40, -30, -20, 20, 30, 40, 50]
     },
     hard: {
       label: "難しい",
-      time: 15,
+      time: 30,
       cents: [-40, -30, -20, -10, 10, 20, 30, 40]
     }
   };
@@ -163,9 +162,7 @@
 
     let text = "難しいをクリアすると、達人への道が開きます。";
     if (progress.countMasterUnlocked && !progress.countSuperUnlocked) {
-      text = "達人をクリアすると、超達人への道が開きます。";
     } else if (progress.countSuperUnlocked) {
-      text = "達人・超達人が解放されています。";
     }
     $("count-lock-note").textContent = text;
   }
@@ -186,7 +183,6 @@
 
     if (key === "count-master" && score >= CLEAR_SCORE && !progress.countSuperUnlocked) {
       progress.countSuperUnlocked = true;
-      unlock = "🌟 超達人モードが解放されました！";
     }
 
     saveProgress();

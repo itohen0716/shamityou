@@ -788,8 +788,22 @@
     engine.stopAll();
 
     try {
-      const targetDuration = await playFrequency(match.frequency, { exclusive: true });
-      await wait(targetDuration * 1000 + 170);
+      // audio-engine.playFrequency() は「再生時間」ではなく voice オブジェクトを返す。
+      // 基準音が最後まで鳴り終わるのを待ってから、自分の音を再生する。
+      const targetVoice = await playFrequency(match.frequency, { exclusive: true });
+
+      if (targetVoice?.ended) {
+        await targetVoice.ended;
+      } else if (Number.isFinite(targetVoice?.duration)) {
+        await wait(targetVoice.duration * 1000);
+      } else {
+        await wait(1000);
+      }
+
+      await wait(220);
+
+      if (match.answered) return;
+
       await playFrequency(adjustedFrequency(), { exclusive: true });
     } catch (error) {
       setMessage("match", error.message || "音を再生できませんでした。", "timeup");

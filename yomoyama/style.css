@@ -138,7 +138,7 @@ img {
 .hero__character {
   width: clamp(250px, 80vw, 300px);
   max-width: none;
-  margin-left: -58px;
+  margin-left: -36px;
   filter: drop-shadow(0 8px 8px rgba(75, 46, 29, 0.16));
 }
 
@@ -167,6 +167,7 @@ img {
   z-index: 3;
   padding-left: 5px;
   text-align: center;
+  transform: translateX(-12px);
 }
 
 .hero__brand {
@@ -447,6 +448,13 @@ main {
   --accent-soft: rgba(154, 136, 180, 0.14);
 }
 
+.story-card--teal {
+  --accent: #679b96;
+  --accent-border: #a9c9c5;
+  --accent-deep: #426f6b;
+  --accent-soft: rgba(103, 155, 150, 0.14);
+}
+
 .story-card__header {
   margin: 0 -18px 22px;
   padding: 20px 18px 18px;
@@ -507,6 +515,61 @@ main {
   margin: 0;
   font-size: 18px;
   line-height: 1.65;
+}
+
+.answer-box--image {
+  padding: 22px 10px 12px;
+  background: #fff;
+}
+
+.tuning-guide-image {
+  width: min(100%, 520px);
+  margin-inline: auto;
+}
+
+.tuning-match-list {
+  display: grid;
+  gap: 13px;
+  margin: 20px 0 4px;
+}
+
+.tuning-match-list section {
+  overflow: hidden;
+  border: 1px solid var(--accent-border);
+  border-radius: 15px;
+  background: #fff;
+}
+
+.tuning-match-list h3 {
+  margin: 0;
+  padding: 8px 14px;
+  color: #fff;
+  background: var(--accent);
+  font-size: 16px;
+  letter-spacing: 0.08em;
+  text-align: center;
+}
+
+.tuning-match-list__base {
+  margin: 0;
+  padding: 11px 14px 7px;
+  color: var(--accent-deep);
+  font-size: 14px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.tuning-match-list ul {
+  display: grid;
+  gap: 7px;
+  margin: 0;
+  padding: 0 14px 14px 34px;
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.tuning-match-list strong {
+  color: var(--accent-deep);
 }
 
 .string-diagram {
@@ -847,24 +910,6 @@ tbody th {
   text-align: left;
 }
 
-.footnote {
-  margin-top: 22px;
-  padding: 15px 17px;
-  border-radius: 14px;
-  color: var(--ink-soft);
-  background: rgba(106, 87, 75, 0.07);
-  font-size: 13px;
-}
-
-.footnote h2 {
-  margin: 0 0 3px;
-  font-size: 14px;
-}
-
-.footnote p {
-  margin: 0;
-}
-
 .home-navigation {
   margin-top: 30px;
   text-align: center;
@@ -957,14 +1002,14 @@ footer p {
 
   .hero__character {
     width: min(42vw, 326px);
-    margin-left: -10px;
+    margin-left: 4px;
   }
 
   .question-list {
     grid-template-columns: 1fr 1fr;
   }
 
-  .question-list li:last-child {
+  .question-list li:last-child:nth-child(odd) {
     grid-column: 1 / -1;
   }
 
@@ -1016,7 +1061,11 @@ footer p {
 
   .hero__character {
     width: clamp(238px, 79vw, 270px);
-    margin-left: -56px;
+    margin-left: -40px;
+  }
+
+  .hero__copy {
+    transform: translateX(-8px);
   }
 
   .hero__brand {

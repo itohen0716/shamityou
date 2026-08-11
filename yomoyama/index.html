@@ -4,10 +4,10 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#f6efe3">
-  <meta name="description" content="三味線の『〇本』と『調子』を、初めての方にもわかりやすく紹介する絲庵の四方山話です。">
-  <title>三味線 四方山話｜絲庵</title>
-  <link rel="stylesheet" href="./style.css">
-  <script src="./script.js" defer></script>
+  <meta name="description" content="三味線の『〇本』と『調子』を、初めての方にもわかりやすく紹介する絲庵の『調子のお話』です。">
+  <title>三味線 調子のお話｜絲庵</title>
+  <link rel="stylesheet" href="./style.css?v=2">
+  <script src="./script.js?v=2" defer></script>
 </head>
 <body>
   <a class="skip-link" href="#main-content">本文へ移動</a>
@@ -24,7 +24,7 @@
       <div class="hero__copy">
         <p class="hero__brand">絲庵 <span>─ Shamisen ─</span></p>
         <p class="hero__kicker">知ると、三味線がもっと楽しい</p>
-        <h1>三味線<br><span>四方山話</span></h1>
+        <h1>三味線<br><span>調子のお話</span></h1>
         <p class="hero__lead">むずかしい言葉を、<br>ひとつずつほどいてみましょう。</p>
       </div>
     </div>
@@ -39,7 +39,7 @@
         <p>項目をタップすると、そのお話へ移動します。</p>
       </div>
 
-      <nav aria-label="四方山話の項目一覧">
+      <nav aria-label="調子のお話の項目一覧">
         <ol class="question-list">
           <li>
             <a class="question-link" href="#question-1">
@@ -73,6 +73,13 @@
             <a class="question-link" href="#question-5">
               <span class="question-link__number" aria-hidden="true">五</span>
               <span class="question-link__text">「六本の二上り」は、どの音？</span>
+              <span class="question-link__arrow" aria-hidden="true">›</span>
+            </a>
+          </li>
+          <li>
+            <a class="question-link" href="#question-6">
+              <span class="question-link__number" aria-hidden="true">六</span>
+              <span class="question-link__text">チューナーがないときの調子の合わせ方</span>
               <span class="question-link__arrow" aria-hidden="true">›</span>
             </a>
           </li>
@@ -258,6 +265,55 @@
 
         <a class="back-to-index" href="#question-index-title">項目一覧へ戻る <span aria-hidden="true">↑</span></a>
       </article>
+
+      <article class="story-card story-card--teal" id="question-6" tabindex="-1">
+        <header class="story-card__header">
+          <p class="story-card__question-number">問 六</p>
+          <h2>チューナーがないときの<br class="sp-only">調子の合わせ方</h2>
+        </header>
+
+        <div class="answer-box answer-box--image">
+          <span class="answer-box__label">答え</span>
+          <img
+            class="tuning-guide-image"
+            src="./images/tuning-without-tuner.png"
+            alt="本調子は一の糸の4と二の糸の開放弦、二の糸の6と三の糸の開放弦を合わせます。二上りは一の糸の6と二の糸の開放弦、二の糸の4と三の糸の開放弦を合わせます。三下りは一の糸の4と二の糸の開放弦、二の糸の4と三の糸の開放弦を合わせます。"
+            width="329"
+            height="128"
+          >
+        </div>
+
+        <div class="tuning-match-list">
+          <section>
+            <h3>本調子</h3>
+            <p class="tuning-match-list__base">一の糸で基本の高さを決める</p>
+            <ul>
+              <li>一の糸の<strong>4</strong>と、二の糸の<strong>開放弦</strong>が同じ音</li>
+              <li>二の糸の<strong>6</strong>と、三の糸の<strong>開放弦</strong>が同じ音</li>
+            </ul>
+          </section>
+
+          <section>
+            <h3>二上り</h3>
+            <p class="tuning-match-list__base">一の糸で基本の高さを決める</p>
+            <ul>
+              <li>一の糸の<strong>6</strong>と、二の糸の<strong>開放弦</strong>が同じ音</li>
+              <li>二の糸の<strong>4</strong>と、三の糸の<strong>開放弦</strong>が同じ音</li>
+            </ul>
+          </section>
+
+          <section>
+            <h3>三下り</h3>
+            <p class="tuning-match-list__base">一の糸で基本の高さを決める</p>
+            <ul>
+              <li>一の糸の<strong>4</strong>と、二の糸の<strong>開放弦</strong>が同じ音</li>
+              <li>二の糸の<strong>4</strong>と、三の糸の<strong>開放弦</strong>が同じ音</li>
+            </ul>
+          </section>
+        </div>
+
+        <a class="back-to-index" href="#question-index-title">項目一覧へ戻る <span aria-hidden="true">↑</span></a>
+      </article>
     </section>
 
     <section class="summary page-width" aria-labelledby="summary-title">
@@ -269,11 +325,6 @@
       </div>
       <p>「六本の二上り」と言われたら、<strong>六本で高さを決め、二上りで3本の音の並びを決める</strong>。この2段階で考えれば大丈夫です。</p>
     </section>
-
-    <aside class="footnote page-width" aria-label="本数の呼び方についての補足">
-      <h2>補足</h2>
-      <p>本数の呼び方には、ジャンル・地域・時代による違いがあります。このページは、調弦アプリで採用している「1本＝A、4本＝C、6本＝D」の方式で説明しています。</p>
-    </aside>
 
     <div class="home-navigation page-width">
       <a class="home-link" href="../index.html">

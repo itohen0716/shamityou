@@ -4,6 +4,7 @@
   const TOTAL = 10;
   const CLEAR_SCORE = 8;
   const STORAGE_KEY = "shian-ear-progress-v3";
+  const CORRECT_TOLERANCE_CENTS = window.ShianJudgementConfig?.toleranceCents ?? 7;
 
   const TUNINGS = {
     hon: { label: "本調子" },
@@ -22,22 +23,23 @@
     normal: { label: "普通", count: 5, consecutive: true },
     hard: { label: "難しい", count: 3, consecutive: false },
     master: { label: "達人", count: 4, consecutive: false },
+    super: { label: "超達人", count: 5, consecutive: false }
   };
 
   const MATCH_LEVELS = {
     easy: {
       label: "簡単",
-      time: 60,
+      time: 30,
       cents: [-200, -150, -100, 100, 150, 200]
     },
     normal: {
       label: "普通",
-      time: 40,
+      time: 20,
       cents: [-50, -40, -30, -20, 20, 30, 40, 50]
     },
     hard: {
       label: "難しい",
-      time: 30,
+      time: 15,
       cents: [-40, -30, -20, -10, 10, 20, 30, 40]
     }
   };
@@ -76,7 +78,6 @@
   let match = {};
   let lastReplay = null;
 
-  let playbackGeneration = 0;
   let tuningLoopTimer = 0;
   let countPlaybackToken = 0;
   let countAnswerLoopTimer = 0;
@@ -163,7 +164,9 @@
 
     let text = "難しいをクリアすると、達人への道が開きます。";
     if (progress.countMasterUnlocked && !progress.countSuperUnlocked) {
+      text = "達人をクリアすると、超達人への道が開きます。";
     } else if (progress.countSuperUnlocked) {
+      text = "達人・超達人が解放されています。";
     }
     $("count-lock-note").textContent = text;
   }
@@ -184,6 +187,7 @@
 
     if (key === "count-master" && score >= CLEAR_SCORE && !progress.countSuperUnlocked) {
       progress.countSuperUnlocked = true;
+      unlock = "🌟 超達人モードが解放されました！";
     }
 
     saveProgress();
@@ -192,9 +196,6 @@
   }
 
   function stopAll() {
-    // await中の自動再生処理も含めて無効化する。
-    playbackGeneration += 1;
-
     clearTimeout(tuningLoopTimer);
     tuningLoopTimer = 0;
 
@@ -208,8 +209,7 @@
     clearInterval(compareTimer);
     compareTimer = 0;
 
-    // 音声はフェード待ちせず即時停止。
-    engine.stopAll(0);
+    engine.stopAll();
   }
 
   function show(id) {
@@ -318,42 +318,17 @@
     }
   }
 
-  async function playTuningOnce(generation = playbackGeneration) {
-    if (generation !== playbackGeneration) return;
-
-    engine.stopAll(0);
+  async function playTuningOnce() {
+    engine.stopAll();
     const entry = master.get(tuning.hon, tuning.key);
 
     for (let i = 0; i < entry.frequencies.length; i += 1) {
-      if (generation !== playbackGeneration || tuning.answered) return;
-
       try {
-        const voice = await playFrequency(entry.frequencies[i], { exclusive: true });
-
-        if (generation !== playbackGeneration || tuning.answered) {
-          voice?.stop?.();
-          return;
-        }
-
-        // その音が最後まで鳴り終わってから次へ進む。
-        if (voice?.ended) {
-          await voice.ended;
-        } else if (Number.isFinite(voice?.duration)) {
-          await wait(voice.duration * 1000);
-        } else {
-          await wait(1000);
-        }
-
-        if (generation !== playbackGeneration || tuning.answered) return;
-
-        if (i < entry.frequencies.length - 1) {
-          await wait(800);
-          if (generation !== playbackGeneration || tuning.answered) return;
-        }
+        await playFrequency(entry.frequencies[i], { exclusive: true });
+        await wait(180);
       } catch (error) {
-        if (generation !== playbackGeneration) return;
         setMessage("tuning", error.message || "音を再生できませんでした。", "timeup");
-        return;
+        break;
       }
     }
   }
@@ -361,27 +336,16 @@
   function startTuningLoop() {
     clearTimeout(tuningLoopTimer);
 
-    const generation = playbackGeneration;
-
     const cycle = async () => {
-      if (
-        generation !== playbackGeneration ||
-        tuning.answered ||
-        !tuning.level.autoLoop
-      ) return;
+      if (tuning.answered || !tuning.level.autoLoop) return;
 
-      await playTuningOnce(generation);
-
-      if (
-        generation !== playbackGeneration ||
-        tuning.answered ||
-        !tuning.level.autoLoop
-      ) return;
-
-      tuningLoopTimer = window.setTimeout(cycle, 2200);
+      await playTuningOnce();
+      if (!tuning.answered) {
+        tuningLoopTimer = window.setTimeout(cycle, 500);
+      }
     };
 
-    setMessage("tuning", "問題音をゆっくり繰り返し再生しています。");
+    setMessage("tuning", "問題音を繰り返し再生しています。");
     cycle();
   }
 
@@ -829,22 +793,8 @@
     engine.stopAll();
 
     try {
-      // audio-engine.playFrequency() は「再生時間」ではなく voice オブジェクトを返す。
-      // 基準音が最後まで鳴り終わるのを待ってから、自分の音を再生する。
-      const targetVoice = await playFrequency(match.frequency, { exclusive: true });
-
-      if (targetVoice?.ended) {
-        await targetVoice.ended;
-      } else if (Number.isFinite(targetVoice?.duration)) {
-        await wait(targetVoice.duration * 1000);
-      } else {
-        await wait(1000);
-      }
-
-      await wait(220);
-
-      if (match.answered) return;
-
+      const targetDuration = await playFrequency(match.frequency, { exclusive: true });
+      await wait(targetDuration * 1000 + 170);
       await playFrequency(adjustedFrequency(), { exclusive: true });
     } catch (error) {
       setMessage("match", error.message || "音を再生できませんでした。", "timeup");
@@ -862,7 +812,7 @@
   function submitMatch() {
     if (match.answered) return;
 
-    const correct = Math.abs(match.cents) <= 5;
+    const correct = Math.abs(match.cents) <= CORRECT_TOLERANCE_CENTS;
     finishMatch(correct, false);
   }
 
@@ -1259,34 +1209,6 @@
       closeCertificatePreviewModal();
     }
   });
-
-
-  // ページを離れたら必ずすべての音を止める。
-  window.addEventListener("pagehide", stopAll);
-  window.addEventListener("blur", stopAll);
-
-  document.addEventListener("freeze", stopAll);
-
-  window.addEventListener("beforeunload", () => {
-    stopAll();
-  });
-
-  document.addEventListener("visibilitychange", () => {
-    if (document.hidden) {
-      stopAll();
-    }
-  });
-
-  // アプリ内リンクで別ページへ移動する場合も、遷移直前に停止する。
-  document.addEventListener("click", (event) => {
-    const link = event.target.closest("a[href]");
-    if (!link) return;
-
-    const href = link.getAttribute("href");
-    if (!href || href.startsWith("#") || link.target === "_blank") return;
-
-    stopAll();
-  }, true);
 
   updateProgressUI();
 })();

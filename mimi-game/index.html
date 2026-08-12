@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#f7f2e8">
   <title>耳を育てる｜絲庵</title>
-  <link rel="stylesheet" href="./game.css?v=113">
+  <link rel="stylesheet" href="./game.css?v=109">
 </head>
 <body>
   <main class="app-shell">
@@ -163,11 +163,11 @@
       <div class="difficulty-grid">
         <button type="button" class="difficulty-card" data-start-count="easy">
           <strong>簡単</strong>
-          <span>ランダム3音</span>
+          <span>連続した3音</span>
         </button>
         <button type="button" class="difficulty-card" data-start-count="normal">
           <strong>普通</strong>
-          <span>ランダム5音</span>
+          <span>連続した5音</span>
         </button>
         <button type="button" class="difficulty-card" data-start-count="hard">
           <strong>難しい</strong>
@@ -239,15 +239,15 @@
       <div class="difficulty-grid">
         <button type="button" class="difficulty-card" data-start-match="easy">
           <strong>簡単</strong>
-          <span>大きめの音程差・60秒</span>
+          <span>大きめの音程差・30秒</span>
         </button>
         <button type="button" class="difficulty-card" data-start-match="normal">
           <strong>普通</strong>
-          <span>中くらいの音程差・40秒</span>
+          <span>中くらいの音程差・20秒</span>
         </button>
         <button type="button" class="difficulty-card" data-start-match="hard">
           <strong>難しい</strong>
-          <span>小さな音程差・30秒</span>
+          <span>小さな音程差・15秒</span>
         </button>
       </div>
     </section>
@@ -415,9 +415,10 @@
   </main>
 
   <!-- 既存アプリのマスター音源・調弦データを共有 -->
+  <script src="../judgement-config.js?v=410"></script>
   <script src="../tuning-data.js?v=410"></script>
   <script src="../sound-segments.js?v=410"></script>
-  <script src="../audio-engine.js?v=410"></script>
-  <script src="./game.js?v=113"></script>
+  <script src="../audio-engine.js?v=411"></script>
+  <script src="./game.js?v=110"></script>
 </body>
 </html>

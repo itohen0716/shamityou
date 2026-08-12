@@ -1,8 +1,9 @@
 (async () => {
   "use strict";
 
-  const TUNING_TOLERANCE_CENTS = 10;
-  const REQUIRED_STABLE_MS = 1000;
+  const judgementConfig = window.ShianJudgementConfig;
+  const TUNING_TOLERANCE_CENTS = judgementConfig?.toleranceCents ?? 7;
+  const REQUIRED_STABLE_MS = judgementConfig?.stableDurationMs ?? 1000;
   const PITCH_DROPOUT_GRACE_MS = 350;
   const MAX_STABLE_FRAME_MS = 80;
   const SMOOTHING_ALPHA = 0.28;

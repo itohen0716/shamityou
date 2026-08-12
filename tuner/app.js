@@ -17,10 +17,13 @@
 
   const MODE_SEQUENCE = "sequence";
   const MODE_SINGLE = "single";
-  const IN_TUNE_CENTS = 5;
+  const judgementConfig = window.ShianJudgementConfig;
+  const IN_TUNE_CENTS = judgementConfig?.toleranceCents ?? 7;
   const NEAR_CENTS = 15;
-  const HOLD_MS = 1200;
+  const HOLD_MS = judgementConfig?.stableDurationMs ?? 1000;
   const TRANSITION_MS = 1500;
+  const PITCH_DROPOUT_GRACE_MS = 350;
+  const MAX_STABLE_FRAME_MS = 80;
   const MIN_FREQUENCY = 70;
   const MAX_FREQUENCY = 900;
 
@@ -68,7 +71,9 @@
   let running = false;
   let mode = MODE_SEQUENCE;
   let currentStringIndex = 0;
-  let holdStartedAt = null;
+  let stableDuration = 0;
+  let lastInTuneAt = 0;
+  let lastValidPitchAt = 0;
   let transitionLocked = false;
   let smoothedFrequency = null;
   let noPitchFrames = 0;
@@ -169,7 +174,8 @@
     meterNeedle.style.background = "var(--brown)";
     centValue.textContent = "-- cent";
     setGuide(message);
-    holdStartedAt = null;
+    resetStableDuration();
+    lastValidPitchAt = 0;
     smoothedFrequency = null;
     noPitchFrames = 0;
     if (!transitionLocked) {
@@ -179,6 +185,22 @@
 
   function centsFromTarget(frequency, target) {
     return 1200 * Math.log2(frequency / target);
+  }
+
+  function normalizePitchToTarget(frequency, target) {
+    let normalized = frequency;
+    const lowerBoundary = target / Math.SQRT2;
+    const upperBoundary = target * Math.SQRT2;
+
+    while (normalized < lowerBoundary) normalized *= 2;
+    while (normalized > upperBoundary) normalized /= 2;
+
+    return normalized;
+  }
+
+  function resetStableDuration() {
+    stableDuration = 0;
+    lastInTuneAt = 0;
   }
 
   function updateMeter(frequency, timestamp) {
@@ -201,15 +223,18 @@
       setImage("shami-ok.png", "音が合って喜ぶシャミ");
 
       if (mode === MODE_SEQUENCE && !transitionLocked) {
-        if (holdStartedAt === null) holdStartedAt = timestamp;
-        if (timestamp - holdStartedAt >= HOLD_MS) {
+        if (lastInTuneAt) {
+          stableDuration += Math.min(timestamp - lastInTuneAt, MAX_STABLE_FRAME_MS);
+        }
+        lastInTuneAt = timestamp;
+        if (stableDuration >= HOLD_MS) {
           void completeCurrentString();
         }
       }
       return;
     }
 
-    holdStartedAt = null;
+    resetStableDuration();
     setImage("shami-listening.png", "耳を澄まして音を聴くシャミ");
 
     if (cents < 0) {
@@ -224,7 +249,7 @@
   async function completeCurrentString() {
     if (transitionLocked) return;
     transitionLocked = true;
-    holdStartedAt = null;
+    resetStableDuration();
 
     const completed = currentStringIndex;
     updateProgress(completed);
@@ -350,20 +375,30 @@
   function analyse(timestamp) {
     if (!running || !analyser || !timeBuffer || !audioContext) return;
 
+    if (transitionLocked) {
+      rafId = window.requestAnimationFrame(analyse);
+      return;
+    }
+
     analyser.getFloatTimeDomainData(timeBuffer);
     const rawFrequency = detectPitch(timeBuffer, audioContext.sampleRate);
 
     if (rawFrequency >= MIN_FREQUENCY && rawFrequency <= MAX_FREQUENCY) {
       noPitchFrames = 0;
+      lastValidPitchAt = timestamp;
+      const measuredFrequency = normalizePitchToTarget(rawFrequency, getTargetFrequency());
       smoothedFrequency =
         smoothedFrequency === null
-          ? rawFrequency
-          : smoothedFrequency * 0.76 + rawFrequency * 0.24;
+          ? measuredFrequency
+          : smoothedFrequency * 0.76 + measuredFrequency * 0.24;
       updateMeter(smoothedFrequency, timestamp);
       statusText.textContent = "";
     } else {
       noPitchFrames += 1;
-      holdStartedAt = null;
+      if (lastValidPitchAt && timestamp - lastValidPitchAt > PITCH_DROPOUT_GRACE_MS) {
+        resetStableDuration();
+        smoothedFrequency = null;
+      }
       if (noPitchFrames > 12 && !transitionLocked) {
         setGuide("もう一度、糸を鳴らしてね");
         setImage("shami-listening.png", "耳を澄まして音を聴くシャミ");

@@ -1,8 +1,8 @@
-const CACHE_NAME = "shian-shamisen-v4.1-r6";
+const CACHE_NAME = "shian-shamisen-v4.1-r8";
 const APP_SHELL = [
   "./","./index.html","./tuning.html","./tuning-play.html","./style.css?v=413",
   "./home.js?v=410","./setup.js?v=410","./tuner.js?v=413","./sound-segments.js?v=410",
-  "./judgement-config.js?v=410","./tuning-data.js?v=410","./tuning-master.json","./audio-engine.js?v=411","./tuning-play.js?v=414",
+  "./judgement-config.js?v=410","./tuning-data.js?v=410","./tuning-master.json","./audio-engine.js?v=411","./tuning-play.js?v=416",
   "./mimi-game/index.html","./mimi-game/game.css?v=411","./mimi-game/game.js?v=110",
   "./tuner/index.html","./tuner/style.css","./tuner/app.js?v=412",
   "./manifest.webmanifest","./sounds/teacher-1to12-octave.wav",

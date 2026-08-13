@@ -5,7 +5,6 @@
   const TUNING_TOLERANCE_CENTS = judgementConfig?.toleranceCents ?? 7;
   const REQUIRED_STABLE_MS = judgementConfig?.stableDurationMs ?? 1000;
   const PITCH_DROPOUT_GRACE_MS = 350;
-  const MAX_STABLE_FRAME_MS = 80;
   const SMOOTHING_ALPHA = 0.28;
   const REFERENCE_INTERVAL_MS = 4200;
 
@@ -36,9 +35,9 @@
   const notes = target.frequencies;
 
   let activeIndex = -1;
-  let stream, analyser, micSource, rafId, referenceTimer;
+  let stream, analyser, micSource, rafId, referenceTimer, inTuneTimer;
   let running = false, changing = false, suppressUntil = 0, voicedSince = 0;
-  let stableDuration = 0, lastInTuneAt = 0, lastValidPitchAt = 0, smoothedFrequency = 0;
+  let inTuneStartedAt = 0, lastInTuneAt = 0, lastValidPitchAt = 0, smoothedFrequency = 0;
 
   function setFeedback(kind, message, judgement = message, ok = false) {
     els.expression.src = `./images/expressions/${EXPRESSIONS[kind]}`;
@@ -110,14 +109,31 @@
   }
   function resetStability() {
     voicedSince = 0;
-    stableDuration = 0;
-    lastInTuneAt = 0;
     lastValidPitchAt = 0;
     smoothedFrequency = 0;
+    resetStableDuration();
   }
   function resetStableDuration() {
-    stableDuration = 0;
+    clearTimeout(inTuneTimer);
+    inTuneTimer = 0;
+    inTuneStartedAt = 0;
     lastInTuneAt = 0;
+  }
+  function continueInTuneHold(now) {
+    lastInTuneAt = now;
+    if (inTuneStartedAt) return;
+
+    inTuneStartedAt = now;
+    const expectedIndex = activeIndex;
+    inTuneTimer = window.setTimeout(() => {
+      inTuneTimer = 0;
+      const recentlyDetected = performance.now() - lastInTuneAt <= PITCH_DROPOUT_GRACE_MS;
+      if (!running || changing || activeIndex !== expectedIndex || !recentlyDetected) {
+        resetStableDuration();
+        return;
+      }
+      void matched();
+    }, REQUIRED_STABLE_MS);
   }
   function smoothPitch(frequency) {
     if (!smoothedFrequency) {
@@ -153,6 +169,7 @@
           voicedSince = 0;
           smoothedFrequency = 0;
           resetStableDuration();
+          setFeedback("listening", "もう一度、糸を弾いてね", "音を確認できません");
         }
         els.mic.textContent = "糸を弾いてください";
         rafId = requestAnimationFrame(tick);
@@ -171,10 +188,8 @@
         resetStableDuration();
         setFeedback("listening", "音が落ち着くのを待っています", "アタックを除外中");
       } else if (isInTune(cents)) {
-        if (lastInTuneAt) stableDuration += Math.min(now - lastInTuneAt, MAX_STABLE_FRAME_MS);
-        lastInTuneAt = now;
-        setFeedback("ok", "そのまま保ってね", "合っています", true);
-        if (stableDuration >= REQUIRED_STABLE_MS) void matched();
+        continueInTuneHold(now);
+        setFeedback("ok", "そのまま保ってね", "確認中…", true);
       } else {
         resetStableDuration();
         const low = cents < 0;
@@ -190,17 +205,25 @@
     stopReference();
     resetStability();
     setFeedback("ok", "ぴったりです！", "合っています", true);
-    await new Promise((resolve) => setTimeout(resolve, 500));
     if (practice === "single") {
       stopSession(false);
       changing = false;
       return;
     }
     if (activeIndex < 2) {
-      await showScene(activeIndex === 0 ? "next2" : "next3", 1500);
-      activeIndex += 1;
+      const completedIndex = activeIndex;
+      activeIndex = completedIndex + 1;
       updateActiveTarget();
       updateButtons();
+      try {
+        await showScene(completedIndex === 0 ? "next2" : "next3", 1500);
+      } catch (error) {
+        console.error("次の糸の案内画像を表示できませんでした", error);
+      }
+      if (!running || activeIndex < 0) {
+        changing = false;
+        return;
+      }
       setGuidance("listening", `${LABELS[ORDER[activeIndex]]}を合わせよう`);
       startReference();
       changing = false;

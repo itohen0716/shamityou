@@ -135,6 +135,14 @@
       void matched();
     }, REQUIRED_STABLE_MS);
   }
+  function holdSingleSuccess() {
+    running = false;
+    stopReference();
+    cancelAnimationFrame(rafId);
+    resetStability();
+    els.mic.textContent = `${LABELS[ORDER[activeIndex]]}が合いました`;
+    setFeedback("ok", "ぴったりです！", "合っています", true);
+  }
   function smoothPitch(frequency) {
     if (!smoothedFrequency) {
       smoothedFrequency = frequency;
@@ -188,6 +196,10 @@
         resetStableDuration();
         setFeedback("listening", "音が落ち着くのを待っています", "アタックを除外中");
       } else if (isInTune(cents)) {
+        if (practice === "single") {
+          holdSingleSuccess();
+          return;
+        }
         continueInTuneHold(now);
         setFeedback("ok", "そのまま保ってね", "確認中…", true);
       } else {
@@ -206,7 +218,7 @@
     resetStability();
     setFeedback("ok", "ぴったりです！", "合っています", true);
     if (practice === "single") {
-      stopSession(false);
+      holdSingleSuccess();
       changing = false;
       return;
     }

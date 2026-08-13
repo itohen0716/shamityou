@@ -77,6 +77,7 @@
   let transitionLocked = false;
   let smoothedFrequency = null;
   let noPitchFrames = 0;
+  let singleSuccessLatched = false;
 
   function getEntry() {
     return MASTER.get(Number(baseStringSelect.value), tuningSelect.value);
@@ -168,6 +169,7 @@
   }
 
   function resetMeter(message = "マイクを開始してください") {
+    singleSuccessLatched = false;
     detectedNote.textContent = "—";
     frequencyValue.textContent = "--.-";
     meterNeedle.style.left = "50%";
@@ -218,6 +220,7 @@
     const absolute = Math.abs(cents);
 
     if (absolute <= IN_TUNE_CENTS) {
+      if (mode === MODE_SINGLE) singleSuccessLatched = true;
       meterNeedle.style.background = "var(--success)";
       setGuide("ぴったりです！", "ok");
       setImage("shami-ok.png", "音が合って喜ぶシャミ");
@@ -234,6 +237,7 @@
       return;
     }
 
+    singleSuccessLatched = false;
     resetStableDuration();
     setImage("shami-listening.png", "耳を澄まして音を聴くシャミ");
 
@@ -399,7 +403,7 @@
         resetStableDuration();
         smoothedFrequency = null;
       }
-      if (noPitchFrames > 12 && !transitionLocked) {
+      if (noPitchFrames > 12 && !transitionLocked && !singleSuccessLatched) {
         setGuide("もう一度、糸を鳴らしてね");
         setImage("shami-listening.png", "耳を澄まして音を聴くシャミ");
       }

@@ -235,8 +235,10 @@ select {
 }
 
 #targetText {
-  color: var(--muted);
-  font-size: 11px;
+  color: var(--brown-soft);
+  font-size: clamp(15px, 4vw, 17px);
+  font-weight: 700;
+  line-height: 1.35;
   text-align: right;
 }
 
@@ -277,19 +279,22 @@ select {
   display: flex;
   align-items: baseline;
   justify-content: center;
-  gap: 5px;
+  gap: 4px;
   margin-top: 7px;
   color: var(--muted);
+  font-size: clamp(20px, 5.5vw, 24px);
+  font-weight: 700;
 }
 
 #frequencyValue {
   font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
-  font-size: 17px;
-  font-weight: 700;
+  font-size: inherit;
+  font-weight: inherit;
 }
 
 .frequency span:last-child {
-  font-size: 12px;
+  font-size: inherit;
+  font-weight: inherit;
 }
 
 .meter {
@@ -368,7 +373,8 @@ select {
   margin: 5px 0 0;
   color: var(--muted);
   font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
-  font-size: 12px;
+  font-size: clamp(14px, 3.8vw, 16px);
+  font-weight: 700;
   text-align: center;
 }
 

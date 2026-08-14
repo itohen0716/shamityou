@@ -827,10 +827,14 @@
     match.time = match.level.time;
     match.answered = false;
     match.comparing = false;
+    match.reviewMode = false;
+    match.finalPlayerFrequency = null;
+    match.finalCents = null;
 
     $("submit-match").classList.remove("hidden");
     $("submit-match").disabled = false;
     $("next-match").classList.add("hidden");
+    $("match-hz-result").classList.add("hidden");
 
     document.querySelectorAll("[data-shift]").forEach((button) => {
       button.disabled = false;
@@ -882,8 +886,7 @@
     engine.stopAll();
 
     try {
-      // audio-engine.playFrequency() は「再生時間」ではなく voice オブジェクトを返す。
-      // 基準音が最後まで鳴り終わるのを待ってから、自分の音を再生する。
+      const playerFrequency = adjustedFrequency();
       const targetVoice = await playFrequency(match.frequency, { exclusive: true });
 
       if (targetVoice?.ended) {
@@ -894,21 +897,40 @@
         await wait(1000);
       }
 
-      await wait(220);
-
-      if (match.answered) return;
-
-      await playFrequency(adjustedFrequency(), { exclusive: true });
+      await wait(350);
+      await playFrequency(playerFrequency, { exclusive: true });
     } catch (error) {
       setMessage("match", error.message || "音を再生できませんでした。", "timeup");
     }
   }
 
+  function updateMatchHzResult() {
+    if (!$("match-hz-result")) return;
+    $("match-target-hz").textContent = `${match.frequency.toFixed(1)} Hz`;
+    $("match-player-hz").textContent = `${adjustedFrequency().toFixed(1)} Hz`;
+    $("match-hz-result").classList.remove("hidden");
+  }
+
   function shiftMatch(cents) {
-    if (match.answered) return;
+    if (match.answered && !match.reviewMode) return;
 
     match.cents = Math.max(-240, Math.min(240, match.cents + cents));
-    setMessage("match", cents < 0 ? "自分の音を下げました。" : "自分の音を上げました.");
+
+    if (match.reviewMode) {
+      updateMatchHzResult();
+
+      const diff = match.cents;
+      if (Math.abs(diff) <= 5) {
+        setMessage("match", "基準音に近づいたよ。音をよく確認してみよう。", "listening");
+      } else if (diff < 0) {
+        setMessage("match", "まだ少し低いよ。少し上げて音を確認してみよう。", "listening");
+      } else {
+        setMessage("match", "まだ少し高いよ。少し下げて音を確認してみよう。", "listening");
+      }
+    } else {
+      setMessage("match", cents < 0 ? "自分の音を下げました。" : "自分の音を上げました.");
+    }
+
     playMatchPlayer();
   }
 
@@ -922,21 +944,30 @@
   function finishMatch(correct, timeout) {
     if (match.answered) return;
 
+    match.finalPlayerFrequency = adjustedFrequency();
+    match.finalCents = match.cents;
     match.answered = true;
+
     clearInterval(matchTimer);
     clearInterval(compareTimer);
     engine.stopAll();
 
-    document.querySelectorAll("[data-shift]").forEach((button) => {
-      button.disabled = true;
-    });
-
     $("submit-match").classList.add("hidden");
+    $("next-match").classList.remove("hidden");
+    $("next-match").textContent =
+      match.question >= TOTAL ? "結果を見る" : "次の問題へ";
+
+    updateMatchHzResult();
 
     if (correct) {
+      match.reviewMode = false;
       match.score += 1;
       match.streak += 1;
       match.best = Math.max(match.best, match.streak);
+
+      document.querySelectorAll("[data-shift]").forEach((button) => {
+        button.disabled = true;
+      });
 
       if (match.streak >= 3) {
         setMessage("match", `${match.streak}問連続正解！ぴったりだよ♪`, "streak");
@@ -944,23 +975,38 @@
         setMessage("match", "正解！ぴったり合ったよ♪", "correct");
       }
     } else {
+      match.reviewMode = true;
       match.streak = 0;
 
-      if (timeout) {
-        setMessage("match", "時間切れ！正しい音を聴いてみよう。", "timeup");
-      } else {
-        const direction = match.cents > 0 ? "高かった" : "低かった";
-        setMessage("match", `おしい！自分の音は少し${direction}よ。`, "thinking");
-      }
+      // 不正解として成績は確定。ただし上げ下げ操作は復習用に残す。
+      document.querySelectorAll("[data-shift]").forEach((button) => {
+        button.disabled = false;
+      });
 
-      match.cents = 0;
-      playMatchCompareOnce();
+      const currentHz = match.finalPlayerFrequency.toFixed(1);
+
+      if (timeout) {
+        setMessage(
+          "match",
+          `時間切れ！${currentHz}Hzだったよ。\n基準音とあなたの音を聴き比べて、音を確認してみよう。`,
+          "timeup"
+        );
+      } else if (match.finalCents < 0) {
+        setMessage(
+          "match",
+          `${currentHz}Hz　低かったよ\n少し上げて音を確認してみよう`,
+          "thinking"
+        );
+      } else {
+        setMessage(
+          "match",
+          `${currentHz}Hz　高かったよ\n少し下げて音を確認してみよう`,
+          "thinking"
+        );
+      }
     }
 
     matchStats();
-    $("next-match").classList.remove("hidden");
-    $("next-match").textContent =
-      match.question >= TOTAL ? "結果を見る" : "次の問題へ";
   }
 
   function nextMatch() {

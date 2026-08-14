@@ -1049,3 +1049,38 @@ body.certificate-preview-open {
     grid-template-columns: repeat(12, 38px);
   }
 }
+
+
+.match-hz-result {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin: 12px 0 14px;
+}
+
+.match-hz-result > div {
+  padding: 12px 10px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: #fffdf8;
+}
+
+.match-hz-result span {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--muted);
+  font-size: .82rem;
+  font-weight: 700;
+}
+
+.match-hz-result strong {
+  display: block;
+  color: var(--accent-dark);
+  font-size: 1.2rem;
+}
+
+@media (max-width: 430px) {
+  .match-hz-result {
+    grid-template-columns: 1fr;
+  }
+}

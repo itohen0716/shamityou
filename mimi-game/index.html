@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#f7f2e8">
   <title>耳を育てる｜絲庵</title>
-  <link rel="stylesheet" href="./game.css?v=115">
+  <link rel="stylesheet" href="./game.css?v=116">
 </head>
 <body>
   <main class="app-shell">
@@ -277,6 +277,17 @@
         <h2>基準音に合わせよう</h2>
         <p id="match-message" class="message" aria-live="polite">二つの音を聴き比べてね。</p>
 
+        <div id="match-hz-result" class="match-hz-result hidden" aria-live="polite">
+          <div>
+            <span>基準音</span>
+            <strong id="match-target-hz">-- Hz</strong>
+          </div>
+          <div>
+            <span>あなたの音</span>
+            <strong id="match-player-hz">-- Hz</strong>
+          </div>
+        </div>
+
         <div class="sound-buttons">
           <button type="button" id="play-match-target" class="secondary-button">♪ 基準音</button>
           <button type="button" id="play-match-player" class="secondary-button">♪ 自分の音</button>
@@ -418,6 +429,6 @@
   <script src="../tuning-data.js?v=410"></script>
   <script src="../sound-segments.js?v=410"></script>
   <script src="../audio-engine.js?v=410"></script>
-  <script src="./game.js?v=115"></script>
+  <script src="./game.js?v=116"></script>
 </body>
 </html>

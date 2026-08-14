@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#f7f2e8">
   <title>耳を育てる｜絲庵</title>
-  <link rel="stylesheet" href="./game.css?v=109">
+  <link rel="stylesheet" href="./game.css?v=115">
 </head>
 <body>
   <main class="app-shell">
@@ -163,30 +163,24 @@
       <div class="difficulty-grid">
         <button type="button" class="difficulty-card" data-start-count="easy">
           <strong>簡単</strong>
-          <span>連続した3音</span>
+          <span>ランダム3音</span>
         </button>
         <button type="button" class="difficulty-card" data-start-count="normal">
           <strong>普通</strong>
-          <span>連続した5音</span>
+          <span>ランダム5音</span>
         </button>
         <button type="button" class="difficulty-card" data-start-count="hard">
           <strong>難しい</strong>
-          <span>ランダム3音</span>
+          <span>連続した3音</span>
         </button>
       </div>
 
       <div id="count-unlock-area" class="unlock-area">
         <button type="button" id="count-master-button" class="unlock-button hidden" data-start-count="master">
           👑 達人に挑戦
-          <small>完全ランダム4音</small>
+          <small>連続した4音</small>
         </button>
-
-        <button type="button" id="count-super-button" class="unlock-button super hidden" data-start-count="super">
-          🌟 超達人に挑戦
-          <small>完全ランダム5音</small>
-        </button>
-
-        <p id="count-lock-note" class="lock-note">難しいをクリアすると、達人への道が開きます。</p>
+<p id="count-lock-note" class="lock-note">難しいをクリアすると、達人への道が開きます。</p>
 
         <button type="button" class="review-link" id="open-review-modal">
           ♪ おさらい
@@ -219,6 +213,12 @@
 
         <div id="count-answer-buttons" class="count-answer-buttons" aria-label="回答"></div>
 
+        <section id="count-hint" class="count-hint hidden" aria-label="本数の音のヒント">
+          <div class="count-hint-title">ヒント</div>
+          <p class="count-hint-note">問題の本数の鍵盤を色で示しています。</p>
+          <div id="count-hint-keyboard" class="count-hint-keyboard" aria-hidden="true"></div>
+        </section>
+
         <button type="button" id="play-count-answer" class="secondary-button hidden" hidden>♪ 正解の音だけを聴く</button>
         <button type="button" id="next-count" class="primary-button hidden">次の問題へ</button>
       </article>
@@ -239,15 +239,15 @@
       <div class="difficulty-grid">
         <button type="button" class="difficulty-card" data-start-match="easy">
           <strong>簡単</strong>
-          <span>大きめの音程差・30秒</span>
+          <span>大きめの音程差・60秒</span>
         </button>
         <button type="button" class="difficulty-card" data-start-match="normal">
           <strong>普通</strong>
-          <span>中くらいの音程差・20秒</span>
+          <span>中くらいの音程差・40秒</span>
         </button>
         <button type="button" class="difficulty-card" data-start-match="hard">
           <strong>難しい</strong>
-          <span>小さな音程差・15秒</span>
+          <span>小さな音程差・30秒</span>
         </button>
       </div>
     </section>
@@ -415,10 +415,9 @@
   </main>
 
   <!-- 既存アプリのマスター音源・調弦データを共有 -->
-  <script src="../judgement-config.js?v=410"></script>
   <script src="../tuning-data.js?v=410"></script>
   <script src="../sound-segments.js?v=410"></script>
-  <script src="../audio-engine.js?v=411"></script>
-  <script src="./game.js?v=110"></script>
+  <script src="../audio-engine.js?v=410"></script>
+  <script src="./game.js?v=115"></script>
 </body>
 </html>

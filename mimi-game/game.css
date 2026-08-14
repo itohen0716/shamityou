@@ -958,3 +958,94 @@ body.review-open {
 body.certificate-preview-open {
   overflow: hidden;
 }
+
+
+/* ② 何本か当てる：簡単・普通のヒント鍵盤 */
+.count-hint {
+  margin: 14px 0 4px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: #fffdf8;
+}
+
+.count-hint-title {
+  color: var(--accent-dark);
+  font-weight: 900;
+  text-align: left;
+}
+
+.count-hint-note {
+  margin: 3px 0 10px;
+  color: var(--muted);
+  font-size: .84rem;
+  text-align: left;
+}
+
+.count-hint-keyboard {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(34px, 1fr));
+  align-items: end;
+  gap: 2px;
+  overflow-x: auto;
+  padding: 4px 2px 2px;
+}
+
+.count-hint-key {
+  position: relative;
+  display: flex;
+  min-width: 34px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  border: 1px solid #29231f;
+  font-size: .69rem;
+  line-height: 1.15;
+}
+
+.count-hint-key.white {
+  height: 112px;
+  padding: 8px 2px;
+  background: #fff;
+  color: #1f1b18;
+}
+
+.count-hint-key.black {
+  height: 76px;
+  align-self: start;
+  padding: 8px 2px;
+  background: #161616;
+  color: #fff;
+}
+
+.count-hint-key .latin {
+  margin-bottom: auto;
+  font-size: .72rem;
+}
+
+.count-hint-key .kana {
+  margin-top: 4px;
+}
+
+.count-hint-key strong {
+  margin-top: 3px;
+  font-size: .69rem;
+}
+
+.count-hint-key.target {
+  border: 3px solid var(--accent);
+  background: #dff0e9;
+  color: #184c3e;
+  box-shadow: 0 0 0 2px rgba(63, 123, 104, .16);
+}
+
+.count-hint-key.black.target {
+  background: var(--accent);
+  color: #fff;
+}
+
+@media (max-width: 540px) {
+  .count-hint-keyboard {
+    grid-template-columns: repeat(12, 38px);
+  }
+}

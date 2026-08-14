@@ -4,7 +4,6 @@
   const TOTAL = 10;
   const CLEAR_SCORE = 8;
   const STORAGE_KEY = "shian-ear-progress-v3";
-  const CORRECT_TOLERANCE_CENTS = window.ShianJudgementConfig?.toleranceCents ?? 7;
 
   const TUNINGS = {
     hon: { label: "本調子" },
@@ -19,27 +18,26 @@
   };
 
   const COUNT_LEVELS = {
-    easy: { label: "簡単", count: 3, consecutive: true },
-    normal: { label: "普通", count: 5, consecutive: true },
-    hard: { label: "難しい", count: 3, consecutive: false },
-    master: { label: "達人", count: 4, consecutive: false },
-    super: { label: "超達人", count: 5, consecutive: false }
+    easy:   { label: "簡単", count: 3, consecutive: false },
+    normal: { label: "普通", count: 5, consecutive: false },
+    hard:   { label: "難しい", count: 3, consecutive: true },
+    master: { label: "達人", count: 4, consecutive: true }
   };
 
   const MATCH_LEVELS = {
     easy: {
       label: "簡単",
-      time: 30,
+      time: 60,
       cents: [-200, -150, -100, 100, 150, 200]
     },
     normal: {
       label: "普通",
-      time: 20,
+      time: 40,
       cents: [-50, -40, -30, -20, 20, 30, 40, 50]
     },
     hard: {
       label: "難しい",
-      time: 15,
+      time: 30,
       cents: [-40, -30, -20, -10, 10, 20, 30, 40]
     }
   };
@@ -78,6 +76,7 @@
   let match = {};
   let lastReplay = null;
 
+  let playbackGeneration = 0;
   let tuningLoopTimer = 0;
   let countPlaybackToken = 0;
   let countAnswerLoopTimer = 0;
@@ -97,8 +96,7 @@
     const fallback = {
       correct: 0,
       cleared: {},
-      countMasterUnlocked: false,
-      countSuperUnlocked: false
+      countMasterUnlocked: false
     };
 
     try {
@@ -108,8 +106,7 @@
       return {
         correct: Number.isFinite(saved.correct) ? Math.max(0, saved.correct) : 0,
         cleared: saved.cleared && typeof saved.cleared === "object" ? saved.cleared : {},
-        countMasterUnlocked: Boolean(saved.countMasterUnlocked),
-        countSuperUnlocked: Boolean(saved.countSuperUnlocked)
+        countMasterUnlocked: Boolean(saved.countMasterUnlocked)
       };
     } catch {
       return fallback;
@@ -131,7 +128,7 @@
   function isCertified() {
     return Boolean(
       progress.cleared["tuning-hard"] &&
-      progress.cleared["count-super"] &&
+      progress.cleared["count-master"] &&
       progress.cleared["match-hard"]
     );
   }
@@ -160,15 +157,10 @@
 
   function updateCountUnlockUI() {
     $("count-master-button").classList.toggle("hidden", !progress.countMasterUnlocked);
-    $("count-super-button").classList.toggle("hidden", !progress.countSuperUnlocked);
 
-    let text = "難しいをクリアすると、達人への道が開きます。";
-    if (progress.countMasterUnlocked && !progress.countSuperUnlocked) {
-      text = "達人をクリアすると、超達人への道が開きます。";
-    } else if (progress.countSuperUnlocked) {
-      text = "達人・超達人が解放されています。";
-    }
-    $("count-lock-note").textContent = text;
+    $("count-lock-note").textContent = progress.countMasterUnlocked
+      ? "達人モードが解放されています。"
+      : "難しいをクリアすると、達人への道が開きます。";
   }
 
   function recordResult(key, score) {
@@ -185,17 +177,15 @@
       unlock = "🎉 達人モードが解放されました！";
     }
 
-    if (key === "count-master" && score >= CLEAR_SCORE && !progress.countSuperUnlocked) {
-      progress.countSuperUnlocked = true;
-      unlock = "🌟 超達人モードが解放されました！";
-    }
-
     saveProgress();
     updateProgressUI();
     return unlock;
   }
 
   function stopAll() {
+    // await中の自動再生処理も含めて無効化する。
+    playbackGeneration += 1;
+
     clearTimeout(tuningLoopTimer);
     tuningLoopTimer = 0;
 
@@ -209,7 +199,8 @@
     clearInterval(compareTimer);
     compareTimer = 0;
 
-    engine.stopAll();
+    // 音声はフェード待ちせず即時停止。
+    engine.stopAll(0);
   }
 
   function show(id) {
@@ -318,17 +309,42 @@
     }
   }
 
-  async function playTuningOnce() {
-    engine.stopAll();
+  async function playTuningOnce(generation = playbackGeneration) {
+    if (generation !== playbackGeneration) return;
+
+    engine.stopAll(0);
     const entry = master.get(tuning.hon, tuning.key);
 
     for (let i = 0; i < entry.frequencies.length; i += 1) {
+      if (generation !== playbackGeneration || tuning.answered) return;
+
       try {
-        await playFrequency(entry.frequencies[i], { exclusive: true });
-        await wait(180);
+        const voice = await playFrequency(entry.frequencies[i], { exclusive: true });
+
+        if (generation !== playbackGeneration || tuning.answered) {
+          voice?.stop?.();
+          return;
+        }
+
+        // その音が最後まで鳴り終わってから次へ進む。
+        if (voice?.ended) {
+          await voice.ended;
+        } else if (Number.isFinite(voice?.duration)) {
+          await wait(voice.duration * 1000);
+        } else {
+          await wait(1000);
+        }
+
+        if (generation !== playbackGeneration || tuning.answered) return;
+
+        if (i < entry.frequencies.length - 1) {
+          await wait(800);
+          if (generation !== playbackGeneration || tuning.answered) return;
+        }
       } catch (error) {
+        if (generation !== playbackGeneration) return;
         setMessage("tuning", error.message || "音を再生できませんでした。", "timeup");
-        break;
+        return;
       }
     }
   }
@@ -336,16 +352,27 @@
   function startTuningLoop() {
     clearTimeout(tuningLoopTimer);
 
-    const cycle = async () => {
-      if (tuning.answered || !tuning.level.autoLoop) return;
+    const generation = playbackGeneration;
 
-      await playTuningOnce();
-      if (!tuning.answered) {
-        tuningLoopTimer = window.setTimeout(cycle, 500);
-      }
+    const cycle = async () => {
+      if (
+        generation !== playbackGeneration ||
+        tuning.answered ||
+        !tuning.level.autoLoop
+      ) return;
+
+      await playTuningOnce(generation);
+
+      if (
+        generation !== playbackGeneration ||
+        tuning.answered ||
+        !tuning.level.autoLoop
+      ) return;
+
+      tuningLoopTimer = window.setTimeout(cycle, 2200);
     };
 
-    setMessage("tuning", "問題音を繰り返し再生しています。");
+    setMessage("tuning", "問題音をゆっくり繰り返し再生しています。");
     cycle();
   }
 
@@ -424,7 +451,6 @@
     if (!level) return;
 
     if (levelKey === "master" && !progress.countMasterUnlocked) return;
-    if (levelKey === "super" && !progress.countSuperUnlocked) return;
 
     // スマホブラウザの自動再生制限対策。
     // 難易度ボタンを押した瞬間（ユーザー操作中）にAudioContextを起動しておく。
@@ -475,9 +501,16 @@
 
     buildCountLabels(false);
     buildCountAnswerButtons();
+    buildCountHintKeyboard();
 
     countStats();
-    setMessage("count", "音が自動で順番に流れます。よく聴いて答えてね。");
+
+    const countGuideMessage =
+      countGame.levelKey === "easy" || countGame.levelKey === "normal"
+        ? "音が自動で順番に流れます。よく聴いて答えてね。\nドレミの鍵盤がヒントだよ♪"
+        : "音が自動で順番に流れます。よく聴いて答えてね。";
+
+    setMessage("count", countGuideMessage);
 
     // AudioContext は難易度選択時に起動済み。
     // 描画が見えてから A→B→C… を自動再生する。
@@ -491,6 +524,62 @@
   function labelName(index) {
     return String.fromCharCode(65 + index);
   }
+
+  const COUNT_HINT_NOTES = {
+    1: { latin: "A",  kana: "ラ",    black: false },
+    2: { latin: "A♯", kana: "ラ♯",   black: true  },
+    3: { latin: "B",  kana: "シ",    black: false },
+    4: { latin: "C",  kana: "ド",    black: false },
+    5: { latin: "C♯", kana: "ド♯",   black: true  },
+    6: { latin: "D",  kana: "レ",    black: false },
+    7: { latin: "D♯", kana: "レ♯",   black: true  },
+    8: { latin: "E",  kana: "ミ",    black: false },
+    9: { latin: "F",  kana: "ファ",  black: false },
+    10:{ latin: "F♯", kana: "ファ♯", black: true  },
+    11:{ latin: "G",  kana: "ソ",    black: false },
+    12:{ latin: "G♯", kana: "ソ♯",   black: true  }
+  };
+
+  function buildCountHintKeyboard() {
+    const hint = $("count-hint");
+    const keyboard = $("count-hint-keyboard");
+
+    const showHint =
+      countGame.levelKey === "easy" ||
+      countGame.levelKey === "normal";
+
+    hint.classList.toggle("hidden", !showHint);
+    keyboard.replaceChildren();
+
+    if (!showHint) return;
+
+    for (let hon = 1; hon <= 12; hon += 1) {
+      const info = COUNT_HINT_NOTES[hon];
+      const key = document.createElement("div");
+
+      key.className =
+        `count-hint-key ${info.black ? "black" : "white"}`;
+
+      if (hon === countGame.targetHon) {
+        key.classList.add("target");
+      }
+
+      const latin = document.createElement("span");
+      latin.className = "latin";
+      latin.textContent = info.latin;
+
+      const kana = document.createElement("span");
+      kana.className = "kana";
+      kana.textContent = info.kana;
+
+      const number = document.createElement("strong");
+      number.textContent = `${hon}本`;
+
+      key.append(latin, kana, number);
+      keyboard.appendChild(key);
+    }
+  }
+
 
   function buildCountLabels(revealed = false) {
     const container = $("count-sound-labels");
@@ -793,8 +882,22 @@
     engine.stopAll();
 
     try {
-      const targetDuration = await playFrequency(match.frequency, { exclusive: true });
-      await wait(targetDuration * 1000 + 170);
+      // audio-engine.playFrequency() は「再生時間」ではなく voice オブジェクトを返す。
+      // 基準音が最後まで鳴り終わるのを待ってから、自分の音を再生する。
+      const targetVoice = await playFrequency(match.frequency, { exclusive: true });
+
+      if (targetVoice?.ended) {
+        await targetVoice.ended;
+      } else if (Number.isFinite(targetVoice?.duration)) {
+        await wait(targetVoice.duration * 1000);
+      } else {
+        await wait(1000);
+      }
+
+      await wait(220);
+
+      if (match.answered) return;
+
       await playFrequency(adjustedFrequency(), { exclusive: true });
     } catch (error) {
       setMessage("match", error.message || "音を再生できませんでした。", "timeup");
@@ -812,7 +915,7 @@
   function submitMatch() {
     if (match.answered) return;
 
-    const correct = Math.abs(match.cents) <= CORRECT_TOLERANCE_CENTS;
+    const correct = Math.abs(match.cents) <= 5;
     finishMatch(correct, false);
   }
 
@@ -1209,6 +1312,34 @@
       closeCertificatePreviewModal();
     }
   });
+
+
+  // ページを離れたら必ずすべての音を止める。
+  window.addEventListener("pagehide", stopAll);
+  window.addEventListener("blur", stopAll);
+
+  document.addEventListener("freeze", stopAll);
+
+  window.addEventListener("beforeunload", () => {
+    stopAll();
+  });
+
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) {
+      stopAll();
+    }
+  });
+
+  // アプリ内リンクで別ページへ移動する場合も、遷移直前に停止する。
+  document.addEventListener("click", (event) => {
+    const link = event.target.closest("a[href]");
+    if (!link) return;
+
+    const href = link.getAttribute("href");
+    if (!href || href.startsWith("#") || link.target === "_blank") return;
+
+    stopAll();
+  }, true);
 
   updateProgressUI();
 })();

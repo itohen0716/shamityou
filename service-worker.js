@@ -1,42 +1,185 @@
-const CACHE_NAME = "shian-shamisen-v4.1-r10";
-const APP_SHELL = [
-  "./","./index.html","./tuning.html","./tuning-play.html","./style.css?v=413",
-  "./home.js?v=410","./setup.js?v=410","./tuner.js?v=413","./sound-segments.js?v=410",
-  "./judgement-config.js?v=410","./tuning-data.js?v=410","./tuning-master.json","./audio-engine.js?v=411","./tuning-play.js?v=417",
-  "./mimi-game/index.html","./mimi-game/game.css?v=411","./mimi-game/game.js?v=110",
-  "./tuner/index.html","./tuner/style.css?v=501","./tuner/app.js?v=413",
-  "./manifest.webmanifest","./sounds/teacher-1to12-octave.wav",
-  "./images/home/shami-home.png","./images/home/icon-tuning.png","./images/home/icon-ear.png","./images/home/tyu.png","./images/home/syamisen.png","./images/home/icon-erika.png",
-  "./images/buttons/hon.png","./images/buttons/niage.png","./images/buttons/sansage.png",
-  "./images/icons/icon-192.png","./images/icons/icon-512.png","./images/icons/icon-512-maskable.png",
-  "./images/tuning/shami_go.png","./images/tuning/shami_next2.png","./images/tuning/shami_next3.png","./images/tuning/shami_complete.png",
-  "./images/expressions/shami_adjust.png","./images/expressions/shami_ok.png","./images/expressions/shami_retry.png","./images/expressions/shami_listening.png",
-  "./mimi-game/images/shami_listening.png","./mimi-game/images/shami_correct.png","./mimi-game/images/shami_thinking.png",
-  "./mimi-game/images/mimi-icon.png","./mimi-game/images/shami_timeup.png","./mimi-game/images/shami_finish.png","./mimi-game/images/shami_master.png","./mimi-game/images/shami_ready.png",
-  "./erika/index.html","./erika/style.css","./erika/script.js","./erika/Image/erika-profile.jpg",
-  "./yomoyama/index.html","./yomoyama/style.css?v=2","./yomoyama/script.js?v=2","./yomoyama/images/eri.png","./yomoyama/images/tuning-without-tuner.png"
+const CACHE_PREFIX = "shian-shamisen-";
+const CACHE_NAME = "shian-shamisen-v4.1-r12-20260814";
+
+/*
+ * 更新方針
+ * - HTML / JS / CSS / JSON はオンライン時に必ずネットワークを優先
+ * - fetch は cache:"no-store" でブラウザHTTPキャッシュも迂回
+ * - 取得成功した最新版だけを現在のCache Storageへ保存
+ * - 新しいService Worker有効化時に旧 shian-shamisen-* キャッシュを全削除
+ * - 音源は大きいためCache First。ただしSW更新時に旧キャッシュごと破棄される
+ * - オフライン時のみ保存済みキャッシュへフォールバック
+ */
+
+const CORE_ASSETS = [
+  "./",
+  "./index.html",
+  "./manifest.webmanifest",
+  "./images/icons/icon-192.png",
+  "./images/icons/icon-512.png",
+  "./images/home/shami-home.png"
 ];
+
 self.addEventListener("install", (event) => {
-  event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_SHELL)));
-  self.skipWaiting();
+  event.waitUntil((async () => {
+    const cache = await caches.open(CACHE_NAME);
+
+    // install時もHTTPキャッシュを使わず最新版を取得
+    await Promise.all(
+      CORE_ASSETS.map(async (url) => {
+        try {
+          const request = new Request(url, { cache: "reload" });
+          const response = await fetch(request);
+          if (response.ok) {
+            await cache.put(url, response.clone());
+          }
+        } catch (_) {
+          // 1ファイルの失敗でService Worker全体の更新を止めない
+        }
+      })
+    );
+
+    await self.skipWaiting();
+  })());
 });
+
 self.addEventListener("activate", (event) => {
-  event.waitUntil(caches.keys().then((keys) => Promise.all(keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key)))));
-  self.clients.claim();
+  event.waitUntil((async () => {
+    const keys = await caches.keys();
+
+    // このアプリの旧キャッシュを確実に全削除
+    await Promise.all(
+      keys
+        .filter((key) => key.startsWith(CACHE_PREFIX) && key !== CACHE_NAME)
+        .map((key) => caches.delete(key))
+    );
+
+    // 開いているページを即座に新SWの管理下へ
+    await self.clients.claim();
+  })());
 });
+
+self.addEventListener("message", (event) => {
+  if (event.data?.type === "SKIP_WAITING") {
+    self.skipWaiting();
+  }
+
+  if (event.data?.type === "CLEAR_OLD_CACHES") {
+    event.waitUntil((async () => {
+      const keys = await caches.keys();
+      await Promise.all(
+        keys
+          .filter((key) => key.startsWith(CACHE_PREFIX) && key !== CACHE_NAME)
+          .map((key) => caches.delete(key))
+      );
+    })());
+  }
+});
+
+function isSameOrigin(request) {
+  return new URL(request.url).origin === self.location.origin;
+}
+
+function isTeacherAudio(request) {
+  return new URL(request.url).pathname.endsWith(
+    "/sounds/teacher-1to12-octave.wav"
+  );
+}
+
+function isFreshCodeRequest(request) {
+  const url = new URL(request.url);
+
+  return (
+    request.mode === "navigate" ||
+    /\.(?:html?|js|css|json|webmanifest)$/i.test(url.pathname)
+  );
+}
+
+async function networkFirstFresh(request) {
+  const cache = await caches.open(CACHE_NAME);
+
+  try {
+    // 重要：通常のHTTPキャッシュも使わせない
+    const freshRequest = new Request(request, {
+      cache: "no-store"
+    });
+
+    const response = await fetch(freshRequest);
+
+    if (response.ok) {
+      await cache.put(request, response.clone());
+    }
+
+    return response;
+  } catch (_) {
+    const cached = await cache.match(request);
+
+    if (cached) return cached;
+
+    if (request.mode === "navigate") {
+      return (
+        (await cache.match("./index.html")) ||
+        (await caches.match("./index.html"))
+      );
+    }
+
+    throw _;
+  }
+}
+
+async function cacheFirstAudio(request) {
+  const cache = await caches.open(CACHE_NAME);
+  const cached = await cache.match(request);
+
+  if (cached) return cached;
+
+  const response = await fetch(
+    new Request(request, { cache: "no-store" })
+  );
+
+  if (response.ok) {
+    await cache.put(request, response.clone());
+  }
+
+  return response;
+}
+
+async function networkFirstAsset(request) {
+  const cache = await caches.open(CACHE_NAME);
+
+  try {
+    const response = await fetch(
+      new Request(request, { cache: "no-store" })
+    );
+
+    if (response.ok) {
+      await cache.put(request, response.clone());
+    }
+
+    return response;
+  } catch (_) {
+    const cached = await cache.match(request);
+    if (cached) return cached;
+    throw _;
+  }
+}
+
 self.addEventListener("fetch", (event) => {
-  if (event.request.method !== "GET" || new URL(event.request.url).origin !== location.origin) return;
   const request = event.request;
-  const teacher = new URL(request.url).pathname.endsWith("/sounds/teacher-1to12-octave.wav");
-  if (teacher) {
-    event.respondWith(caches.match(request).then((cached) => cached || fetch(request).then((response) => {
-      caches.open(CACHE_NAME).then((cache) => cache.put(request, response.clone()));
-      return response;
-    })));
+
+  if (request.method !== "GET" || !isSameOrigin(request)) {
     return;
   }
-  event.respondWith(fetch(request).then((response) => {
-    if (response.ok) caches.open(CACHE_NAME).then((cache) => cache.put(request, response.clone()));
-    return response;
-  }).catch(() => caches.match(request).then((cached) => cached || caches.match("./index.html"))));
+
+  if (isTeacherAudio(request)) {
+    event.respondWith(cacheFirstAudio(request));
+    return;
+  }
+
+  if (isFreshCodeRequest(request)) {
+    event.respondWith(networkFirstFresh(request));
+    return;
+  }
+
+  event.respondWith(networkFirstAsset(request));
 });

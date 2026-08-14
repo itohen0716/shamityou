@@ -34,11 +34,13 @@
   document.querySelectorAll("[data-tuning]").forEach(button => {
     button.addEventListener("click", () => {
       tuning = button.dataset.tuning;
+
       document.querySelectorAll("[data-tuning]").forEach(item => {
         const active = item.dataset.tuning === tuning;
         item.classList.toggle("active", active);
         item.setAttribute("aria-pressed", String(active));
       });
+
       updateSummary();
     });
   });
@@ -58,6 +60,10 @@
   restore();
 
   if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register("./service-worker.js").catch(console.warn);
+    navigator.serviceWorker.register("./service-worker.js", {
+      updateViaCache: "none"
+    }).then((registration) => {
+      registration.update().catch(console.warn);
+    }).catch(console.warn);
   }
 })();

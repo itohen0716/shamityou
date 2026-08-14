@@ -1084,3 +1084,30 @@ body.certificate-preview-open {
     grid-template-columns: 1fr;
   }
 }
+
+
+.practice-card {
+  border-color: #d7bb78;
+  background: #fffaf0;
+}
+
+.match-hz-result .match-cent-result {
+  grid-column: 1 / -1;
+  background: #f7fbf9;
+}
+
+.match-cent-result strong {
+  font-size: 1.35rem;
+}
+
+.match-pass-note {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: #fff8e8;
+  color: #6b5326;
+  font-size: .86rem;
+  font-weight: 700;
+  line-height: 1.6;
+}

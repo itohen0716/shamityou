@@ -25,19 +25,28 @@
   };
 
   const MATCH_LEVELS = {
+    practice: {
+      label: "練習",
+      time: 60,
+      passCents: 30,
+      cents: [-200, -150, -120, -100, 100, 120, 150, 200]
+    },
     easy: {
       label: "簡単",
       time: 60,
-      cents: [-200, -150, -100, 100, 150, 200]
+      passCents: 20,
+      cents: [-120, -100, -80, -60, 60, 80, 100, 120]
     },
     normal: {
       label: "普通",
       time: 40,
-      cents: [-50, -40, -30, -20, 20, 30, 40, 50]
+      passCents: 12,
+      cents: [-60, -50, -40, -30, 30, 40, 50, 60]
     },
     hard: {
       label: "難しい",
       time: 30,
+      passCents: 7,
       cents: [-40, -30, -20, -10, 10, 20, 30, 40]
     }
   };
@@ -842,7 +851,10 @@
 
     matchStats();
     updateMatchTimer();
-    setMessage("match", `${match.level.label}：二つの音を聴き比べて近づけよう。`);
+    setMessage(
+      "match",
+      `${match.level.label}：二つの音を聴き比べて近づけよう。\n合格幅は ±${match.level.passCents}cent だよ。`
+    );
 
     startMatchTimer();
   }
@@ -906,8 +918,18 @@
 
   function updateMatchHzResult() {
     if (!$("match-hz-result")) return;
+
+    const cents = match.cents;
+    const sign = cents > 0 ? "+" : "";
+
     $("match-target-hz").textContent = `${match.frequency.toFixed(1)} Hz`;
     $("match-player-hz").textContent = `${adjustedFrequency().toFixed(1)} Hz`;
+    $("match-cent-diff").textContent = `${sign}${cents.toFixed(0)} cent`;
+    $("match-pass-note").textContent =
+      `${match.level.label}では ±${match.level.passCents}cent 以内を合格にしています。` +
+      (match.levelKey === "practice"
+        ? " ぴったり同じ音でなくても合格になります。"
+        : "");
     $("match-hz-result").classList.remove("hidden");
   }
 
@@ -920,8 +942,8 @@
       updateMatchHzResult();
 
       const diff = match.cents;
-      if (Math.abs(diff) <= 5) {
-        setMessage("match", "基準音に近づいたよ。音をよく確認してみよう。", "listening");
+      if (Math.abs(diff) <= match.level.passCents) {
+        setMessage("match", "合格範囲まで近づいたよ。音をよく確認してみよう。", "listening");
       } else if (diff < 0) {
         setMessage("match", "まだ少し低いよ。少し上げて音を確認してみよう。", "listening");
       } else {
@@ -937,7 +959,7 @@
   function submitMatch() {
     if (match.answered) return;
 
-    const correct = Math.abs(match.cents) <= 5;
+    const correct = Math.abs(match.cents) <= match.level.passCents;
     finishMatch(correct, false);
   }
 
@@ -970,9 +992,17 @@
       });
 
       if (match.streak >= 3) {
-        setMessage("match", `${match.streak}問連続正解！ぴったりだよ♪`, "streak");
+        setMessage(
+          "match",
+          `${match.streak}問連続合格！\n${match.level.label}の合格範囲に入ったよ♪`,
+          "streak"
+        );
       } else {
-        setMessage("match", "正解！ぴったり合ったよ♪", "correct");
+        setMessage(
+          "match",
+          `合格！\n${match.level.label}の合格範囲に入ったよ♪`,
+          "correct"
+        );
       }
     } else {
       match.reviewMode = true;

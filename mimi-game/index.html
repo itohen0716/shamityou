@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#f7f2e8">
   <title>耳を育てる｜絲庵</title>
-  <link rel="stylesheet" href="./game.css?v=117">
+  <link rel="stylesheet" href="./game.css?v=118">
 </head>
 <body>
   <main class="app-shell">
@@ -237,6 +237,11 @@
       </div>
 
       <div class="difficulty-grid">
+        <button type="button" class="difficulty-card cent-experience-card" id="open-cent-experience">
+          <strong>半音って、どれくらい違う？</strong>
+          <span>100centから7centまで、音の違いを耳で体感してみよう</span>
+        </button>
+
         <button type="button" class="difficulty-card practice-card" data-start-match="practice">
           <strong>練習</strong>
           <span>まずは大まかに合わせる・60秒・合格幅 ±30cent</span>
@@ -254,6 +259,57 @@
           <span>小さな音程差・30秒・合格幅 ±7cent</span>
         </button>
       </div>
+    </section>
+
+    <!-- ③ cent体験 -->
+    <section id="screen-cent-experience" class="screen">
+      <button type="button" class="back-button" data-action="open-match-select">‹ 音を合わせるへ戻る</button>
+
+      <div class="hero compact">
+        <img src="./images/shami_listening.png" alt="" class="hero-shami">
+        <div>
+          <h2>半音って、どれくらい違う？</h2>
+          <p>音の高さの違いを、まず耳で体感してみよう。</p>
+        </div>
+      </div>
+
+      <article class="cent-experience-panel">
+        <section class="cent-base-section">
+          <h3>基準音を聴いてみよう</h3>
+          <p id="cent-base-label" class="cent-base-label">現在の基準音：220.0 Hz</p>
+          <button type="button" id="play-cent-base" class="secondary-button">♪ 基準音</button>
+        </section>
+
+        <section class="cent-choice-section">
+          <h3>音の差を選んで聴き比べよう</h3>
+          <div id="cent-choice-grid" class="cent-choice-grid">
+            <button type="button" class="cent-choice active" data-cent-value="100"><strong>100 cent</strong><span>半音ぶん高い</span></button>
+            <button type="button" class="cent-choice" data-cent-value="50"><strong>50 cent</strong><span>半音の半分</span></button>
+            <button type="button" class="cent-choice" data-cent-value="30"><strong>30 cent</strong><span>半音の約3割</span></button>
+            <button type="button" class="cent-choice" data-cent-value="15"><strong>15 cent</strong><span>ほんの少し高い</span></button>
+            <button type="button" class="cent-choice" data-cent-value="7"><strong>7 cent</strong><span>かなり近い</span></button>
+          </div>
+
+          <button type="button" id="play-cent-compare" class="primary-button cent-compare-button">♪ 聴き比べる</button>
+          <p id="cent-experience-status" class="cent-experience-status" aria-live="polite">
+            まずは100centから順番に試してみよう。
+          </p>
+        </section>
+
+        <section class="cent-guide-card">
+          <p><strong>100cent ＝ 半音</strong></p>
+          <p>centは「音がどれくらい高い・低いか」を比べるための単位だよ。</p>
+          <p>100 → 50 → 30 → 15 → 7cent と小さくして、どこまで違いが分かるか試してみよう。</p>
+        </section>
+
+        <section class="cent-actions">
+          <button type="button" id="change-cent-base" class="secondary-button">♪ 音を変える</button>
+          <p class="cent-change-note">違う高さの基準音でも聴いてみよう。</p>
+          <button type="button" id="start-practice-from-cent" class="primary-button">
+            合格幅 ±30centで、挑戦してみよう！
+          </button>
+        </section>
+      </article>
     </section>
 
     <!-- ③ 音合わせゲーム -->
@@ -438,6 +494,6 @@
   <script src="../tuning-data.js?v=410"></script>
   <script src="../sound-segments.js?v=410"></script>
   <script src="../audio-engine.js?v=410"></script>
-  <script src="./game.js?v=117"></script>
+  <script src="./game.js?v=118"></script>
 </body>
 </html>

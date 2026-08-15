@@ -92,6 +92,11 @@
   let matchTimer = 0;
   let compareTimer = 0;
 
+  let centExperience = {
+    baseFrequency: 220,
+    selectedCents: 100
+  };
+
   function escapeHtml(value) {
     return String(value)
       .replaceAll("&", "&amp;")
@@ -790,6 +795,124 @@
     newCountQuestion();
   }
 
+
+  // ---------- ③の前：cent体験 ----------
+
+  const CENT_BASE_FREQUENCIES = [
+    130.8, 146.8, 164.8, 174.6, 196.0, 207.7, 220.0, 246.9, 261.6, 293.7
+  ];
+
+  function frequencyFromCents(baseFrequency, cents) {
+    return baseFrequency * Math.pow(2, cents / 1200);
+  }
+
+  function updateCentBaseLabel() {
+    $("cent-base-label").textContent =
+      `現在の基準音：${centExperience.baseFrequency.toFixed(1)} Hz`;
+  }
+
+  function selectCentDifference(cents) {
+    centExperience.selectedCents = cents;
+
+    document.querySelectorAll("[data-cent-value]").forEach((button) => {
+      button.classList.toggle(
+        "active",
+        Number(button.dataset.centValue) === cents
+      );
+    });
+
+    const description =
+      cents === 100 ? "半音ぶん高い音" : `半音の約${cents}%高い音`;
+
+    $("cent-experience-status").textContent =
+      `${cents}centを選択中。${description}と聴き比べます。`;
+  }
+
+  async function playCentBase() {
+    engine.stopAll(0);
+
+    try {
+      await engine.resume();
+      await engine.load();
+      await playFrequency(centExperience.baseFrequency, { exclusive: true });
+      $("cent-experience-status").textContent =
+        `基準音 ${centExperience.baseFrequency.toFixed(1)} Hz を再生しました。`;
+    } catch (error) {
+      $("cent-experience-status").textContent =
+        error?.message || "基準音を再生できませんでした。";
+    }
+  }
+
+  async function playCentCompare() {
+    engine.stopAll(0);
+
+    const compareFrequency = frequencyFromCents(
+      centExperience.baseFrequency,
+      centExperience.selectedCents
+    );
+
+    try {
+      await engine.resume();
+      await engine.load();
+
+      const baseVoice = await playFrequency(
+        centExperience.baseFrequency,
+        { exclusive: true }
+      );
+
+      if (baseVoice?.ended) {
+        await baseVoice.ended;
+      } else if (Number.isFinite(baseVoice?.duration)) {
+        await wait(baseVoice.duration * 1000);
+      } else {
+        await wait(1000);
+      }
+
+      await wait(450);
+
+      await playFrequency(compareFrequency, { exclusive: true });
+
+      $("cent-experience-status").textContent =
+        `${centExperience.selectedCents}centの違いを再生しました。 ` +
+        `${centExperience.baseFrequency.toFixed(1)} Hz → ` +
+        `${compareFrequency.toFixed(1)} Hz`;
+    } catch (error) {
+      $("cent-experience-status").textContent =
+        error?.message || "聴き比べを再生できませんでした。";
+    }
+  }
+
+  async function changeCentBase() {
+    engine.stopAll(0);
+
+    const candidates = CENT_BASE_FREQUENCIES.filter(
+      (value) => Math.abs(value - centExperience.baseFrequency) > 0.1
+    );
+
+    centExperience.baseFrequency = randomItem(candidates);
+    updateCentBaseLabel();
+
+    try {
+      await engine.resume();
+      await engine.load();
+      await playFrequency(centExperience.baseFrequency, { exclusive: true });
+
+      $("cent-experience-status").textContent =
+        `基準音を ${centExperience.baseFrequency.toFixed(1)} Hz に変えました。 ` +
+        `選択中の ${centExperience.selectedCents}cent はそのままです。`;
+    } catch (error) {
+      $("cent-experience-status").textContent =
+        error?.message || "新しい基準音を再生できませんでした。";
+    }
+  }
+
+  function openCentExperience() {
+    stopAll();
+    updateCentBaseLabel();
+    selectCentDifference(centExperience.selectedCents || 100);
+    show("screen-cent-experience");
+  }
+
   // ---------- ③ 音を合わせる ----------
 
   function matchStats() {
@@ -925,7 +1048,19 @@
     $("match-target-hz").textContent = `${match.frequency.toFixed(1)} Hz`;
     $("match-player-hz").textContent = `${adjustedFrequency().toFixed(1)} Hz`;
     $("match-cent-diff").textContent = `${sign}${cents.toFixed(0)} cent`;
+    const centAmount = Math.abs(cents);
+    const direction =
+      cents > 0 ? "高い音です" : cents < 0 ? "低い音です" : "同じ高さです";
+
+    const centMeaning =
+      centAmount === 0
+        ? "基準音と同じ高さです。"
+        : centAmount >= 95
+          ? `半音（100cent）に近いくらい、${direction}`
+          : `半音（100cent）の約${Math.round(centAmount)}%、${direction}`;
+
     $("match-pass-note").textContent =
+      `${centMeaning} ` +
       `${match.level.label}では ±${match.level.passCents}cent 以内を合格にしています。` +
       (match.levelKey === "practice"
         ? " ぴったり同じ音でなくても合格になります。"
@@ -1416,6 +1551,22 @@
 
     stopAll();
   }, true);
+
+
+  $("open-cent-experience").addEventListener("click", openCentExperience);
+  $("play-cent-base").addEventListener("click", playCentBase);
+  $("play-cent-compare").addEventListener("click", playCentCompare);
+  $("change-cent-base").addEventListener("click", changeCentBase);
+
+  document.querySelectorAll("[data-cent-value]").forEach((button) => {
+    button.addEventListener("click", () => {
+      selectCentDifference(Number(button.dataset.centValue));
+    });
+  });
+
+  $("start-practice-from-cent").addEventListener("click", () => {
+    startMatch("practice");
+  });
 
   updateProgressUI();
 })();

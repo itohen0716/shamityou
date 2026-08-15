@@ -1220,3 +1220,12 @@ body.certificate-preview-open {
     grid-template-columns: 92px 1fr;
   }
 }
+
+
+#stop-cent-compare {
+  background: var(--accent);
+}
+
+.cent-choice.active {
+  transform: translateY(-1px);
+}

@@ -94,7 +94,10 @@
 
   let centExperience = {
     baseFrequency: 220,
-    selectedCents: 100
+    selectedCents: 100,
+    playbackToken: 0,
+    loopTimer: 0,
+    looping: false
   };
 
   function escapeHtml(value) {
@@ -219,6 +222,9 @@
 
   function show(id) {
     stopAll();
+    if (typeof stopCentCompareLoop === "function" && id !== "screen-cent-experience") {
+      stopCentCompareLoop("");
+    }
     screens.forEach((screen) => {
       screen.classList.toggle("active", screen.id === id);
     });
@@ -811,7 +817,7 @@
       `現在の基準音：${centExperience.baseFrequency.toFixed(1)} Hz`;
   }
 
-  function selectCentDifference(cents) {
+  function selectCentDifference(cents, autoPlay = true) {
     centExperience.selectedCents = cents;
 
     document.querySelectorAll("[data-cent-value]").forEach((button) => {
@@ -825,7 +831,11 @@
       cents === 100 ? "半音ぶん高い音" : `半音の約${cents}%高い音`;
 
     $("cent-experience-status").textContent =
-      `${cents}centを選択中。${description}と聴き比べます。`;
+      `${cents}centを選択中。${description}と繰り返し聴き比べます。`;
+
+    if (autoPlay) {
+      startCentCompareLoop();
+    }
   }
 
   async function playCentBase() {
@@ -843,47 +853,87 @@
     }
   }
 
-  async function playCentCompare() {
+  function stopCentCompareLoop(message = "音を停止しました。") {
+    centExperience.playbackToken += 1;
+    centExperience.looping = false;
+    clearTimeout(centExperience.loopTimer);
+    centExperience.loopTimer = 0;
     engine.stopAll(0);
 
-    const compareFrequency = frequencyFromCents(
-      centExperience.baseFrequency,
-      centExperience.selectedCents
-    );
-
-    try {
-      await engine.resume();
-      await engine.load();
-
-      const baseVoice = await playFrequency(
-        centExperience.baseFrequency,
-        { exclusive: true }
-      );
-
-      if (baseVoice?.ended) {
-        await baseVoice.ended;
-      } else if (Number.isFinite(baseVoice?.duration)) {
-        await wait(baseVoice.duration * 1000);
-      } else {
-        await wait(1000);
-      }
-
-      await wait(450);
-
-      await playFrequency(compareFrequency, { exclusive: true });
-
-      $("cent-experience-status").textContent =
-        `${centExperience.selectedCents}centの違いを再生しました。 ` +
-        `${centExperience.baseFrequency.toFixed(1)} Hz → ` +
-        `${compareFrequency.toFixed(1)} Hz`;
-    } catch (error) {
-      $("cent-experience-status").textContent =
-        error?.message || "聴き比べを再生できませんでした。";
+    if ($("cent-experience-status")) {
+      $("cent-experience-status").textContent = message;
     }
   }
 
+  async function startCentCompareLoop() {
+    stopCentCompareLoop("");
+
+    const token = ++centExperience.playbackToken;
+    centExperience.looping = true;
+
+    const cycle = async () => {
+      if (!centExperience.looping || token !== centExperience.playbackToken) return;
+
+      const compareFrequency = frequencyFromCents(
+        centExperience.baseFrequency,
+        centExperience.selectedCents
+      );
+
+      try {
+        await engine.resume();
+        await engine.load();
+
+        if (!centExperience.looping || token !== centExperience.playbackToken) return;
+
+        $("cent-experience-status").textContent =
+          `${centExperience.selectedCents}centを繰り返し再生中。 ` +
+          `${centExperience.baseFrequency.toFixed(1)} Hz → ` +
+          `${compareFrequency.toFixed(1)} Hz`;
+
+        const baseVoice = await playFrequency(
+          centExperience.baseFrequency,
+          { exclusive: true }
+        );
+
+        if (baseVoice?.ended) {
+          await baseVoice.ended;
+        } else if (Number.isFinite(baseVoice?.duration)) {
+          await wait(baseVoice.duration * 1000);
+        } else {
+          await wait(1000);
+        }
+
+        if (!centExperience.looping || token !== centExperience.playbackToken) return;
+
+        await wait(450);
+
+        const compareVoice = await playFrequency(
+          compareFrequency,
+          { exclusive: true }
+        );
+
+        if (compareVoice?.ended) {
+          await compareVoice.ended;
+        } else if (Number.isFinite(compareVoice?.duration)) {
+          await wait(compareVoice.duration * 1000);
+        } else {
+          await wait(1000);
+        }
+
+        if (!centExperience.looping || token !== centExperience.playbackToken) return;
+
+        // 1セットごとに少し間を空けて繰り返す
+        centExperience.loopTimer = window.setTimeout(cycle, 900);
+      } catch (error) {
+        stopCentCompareLoop(error?.message || "聴き比べを再生できませんでした。");
+      }
+    };
+
+    cycle();
+  }
+
   async function changeCentBase() {
-    engine.stopAll(0);
+    stopCentCompareLoop("");
 
     const candidates = CENT_BASE_FREQUENCIES.filter(
       (value) => Math.abs(value - centExperience.baseFrequency) > 0.1
@@ -899,7 +949,10 @@
 
       $("cent-experience-status").textContent =
         `基準音を ${centExperience.baseFrequency.toFixed(1)} Hz に変えました。 ` +
-        `選択中の ${centExperience.selectedCents}cent はそのままです。`;
+        `このあと ${centExperience.selectedCents}cent の違いを繰り返し再生します。`;
+
+      await wait(700);
+      startCentCompareLoop();
     } catch (error) {
       $("cent-experience-status").textContent =
         error?.message || "新しい基準音を再生できませんでした。";
@@ -909,7 +962,7 @@
   function openCentExperience() {
     stopAll();
     updateCentBaseLabel();
-    selectCentDifference(centExperience.selectedCents || 100);
+    selectCentDifference(centExperience.selectedCents || 100, false);
     show("screen-cent-experience");
   }
 
@@ -1555,7 +1608,7 @@
 
   $("open-cent-experience").addEventListener("click", openCentExperience);
   $("play-cent-base").addEventListener("click", playCentBase);
-  $("play-cent-compare").addEventListener("click", playCentCompare);
+  $("stop-cent-compare").addEventListener("click", () => stopCentCompareLoop());
   $("change-cent-base").addEventListener("click", changeCentBase);
 
   document.querySelectorAll("[data-cent-value]").forEach((button) => {

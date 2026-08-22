@@ -3,7 +3,7 @@
 
   const judgementConfig = window.ShianJudgementConfig;
   const TUNING_TOLERANCE_CENTS = judgementConfig?.toleranceCents ?? 7;
-  const REQUIRED_STABLE_MS = judgementConfig?.stableDurationMs ?? 1000;
+  const SEQUENCE_ADVANCE_DELAY_MS = judgementConfig?.sequenceAdvanceDelayMs ?? 500;
   const PITCH_DROPOUT_GRACE_MS = 350;
   const SMOOTHING_ALPHA = 0.28;
   const REFERENCE_INTERVAL_MS = 4200;
@@ -37,7 +37,7 @@
   let activeIndex = -1;
   let stream, analyser, micSource, rafId, referenceTimer, inTuneTimer;
   let running = false, changing = false, suppressUntil = 0, voicedSince = 0;
-  let inTuneStartedAt = 0, lastInTuneAt = 0, lastValidPitchAt = 0, smoothedFrequency = 0;
+  let inTuneStartedAt = 0, lastValidPitchAt = 0, smoothedFrequency = 0;
 
   function setFeedback(kind, message, judgement = message, ok = false) {
     els.expression.src = `./images/expressions/${EXPRESSIONS[kind]}`;
@@ -117,23 +117,22 @@
     clearTimeout(inTuneTimer);
     inTuneTimer = 0;
     inTuneStartedAt = 0;
-    lastInTuneAt = 0;
   }
-  function continueInTuneHold(now) {
-    lastInTuneAt = now;
-    if (inTuneStartedAt) return;
-
+  function acceptSequenceSuccess(now) {
+    if (inTuneStartedAt || inTuneTimer || changing) return;
     inTuneStartedAt = now;
     const expectedIndex = activeIndex;
+    stopReference();
+    els.mic.textContent = `${LABELS[ORDER[activeIndex]]}が合いました`;
+    setFeedback("ok", "ぴったりです！", "合っています", true);
     inTuneTimer = window.setTimeout(() => {
       inTuneTimer = 0;
-      const recentlyDetected = performance.now() - lastInTuneAt <= PITCH_DROPOUT_GRACE_MS;
-      if (!running || changing || activeIndex !== expectedIndex || !recentlyDetected) {
+      if (!running || changing || activeIndex !== expectedIndex) {
         resetStableDuration();
         return;
       }
       void matched();
-    }, REQUIRED_STABLE_MS);
+    }, SEQUENCE_ADVANCE_DELAY_MS);
   }
   function holdSingleSuccess() {
     running = false;
@@ -164,6 +163,10 @@
         rafId = requestAnimationFrame(tick);
         return;
       }
+      if (inTuneTimer) {
+        rafId = requestAnimationFrame(tick);
+        return;
+      }
       analyser.getFloatTimeDomainData(data);
       if (now < suppressUntil) {
         resetStability();
@@ -177,9 +180,10 @@
           voicedSince = 0;
           smoothedFrequency = 0;
           resetStableDuration();
-          setFeedback("listening", "もう一度、糸を弾いてね", "音を確認できません");
+          els.mic.textContent = "もう一度、糸を弾いてください";
+        } else if (!lastValidPitchAt) {
+          els.mic.textContent = "糸を弾いてください";
         }
-        els.mic.textContent = "糸を弾いてください";
         rafId = requestAnimationFrame(tick);
         return;
       }
@@ -200,8 +204,7 @@
           holdSingleSuccess();
           return;
         }
-        continueInTuneHold(now);
-        setFeedback("ok", "そのまま保ってね", "確認中…", true);
+        acceptSequenceSuccess(now);
       } else {
         resetStableDuration();
         const low = cents < 0;

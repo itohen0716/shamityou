@@ -3,6 +3,8 @@
 
   const config = Object.freeze({
     toleranceCents: 7,
+    perfectCents: 7,
+    passCents: 12,
     stableDurationMs: 1000,
     sequenceAdvanceDelayMs: 500
   });

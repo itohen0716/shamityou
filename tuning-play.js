@@ -2,7 +2,8 @@
   "use strict";
 
   const judgementConfig = window.ShianJudgementConfig;
-  const TUNING_TOLERANCE_CENTS = judgementConfig?.toleranceCents ?? 7;
+  const PERFECT_CENTS = judgementConfig?.perfectCents ?? judgementConfig?.toleranceCents ?? 7;
+  const PASS_CENTS = judgementConfig?.passCents ?? PERFECT_CENTS;
   const SEQUENCE_ADVANCE_DELAY_MS = judgementConfig?.sequenceAdvanceDelayMs ?? 500;
   const PITCH_DROPOUT_GRACE_MS = 350;
   const SMOOTHING_ALPHA = 0.28;
@@ -52,8 +53,19 @@
   function setNeedle(cents) {
     els.needle.style.left = `${50 + Math.max(-50, Math.min(50, cents))}%`;
   }
-  function isInTune(cents) {
-    return Math.abs(cents) <= TUNING_TOLERANCE_CENTS;
+  function isPassing(cents) {
+    return Math.abs(cents) <= PASS_CENTS;
+  }
+  function isPerfect(cents) {
+    return Math.abs(cents) <= PERFECT_CENTS;
+  }
+  function setSuccessFeedback(perfect) {
+    setFeedback(
+      "ok",
+      perfect ? "ぴったりです！" : "合っています！",
+      perfect ? "ぴったりです" : "合っています",
+      true
+    );
   }
   function updateActiveTarget() {
     els.targetHz.textContent = activeIndex < 0 ? "--.-Hz" : master.formatHz(notes[activeIndex]).replace(" ", "");
@@ -118,13 +130,13 @@
     inTuneTimer = 0;
     inTuneStartedAt = 0;
   }
-  function acceptSequenceSuccess(now) {
+  function acceptSequenceSuccess(now, perfect) {
     if (inTuneStartedAt || inTuneTimer || changing) return;
     inTuneStartedAt = now;
     const expectedIndex = activeIndex;
     stopReference();
     els.mic.textContent = `${LABELS[ORDER[activeIndex]]}が合いました`;
-    setFeedback("ok", "ぴったりです！", "合っています", true);
+    setSuccessFeedback(perfect);
     inTuneTimer = window.setTimeout(() => {
       inTuneTimer = 0;
       if (!running || changing || activeIndex !== expectedIndex) {
@@ -134,13 +146,13 @@
       void matched();
     }, SEQUENCE_ADVANCE_DELAY_MS);
   }
-  function holdSingleSuccess() {
+  function holdSingleSuccess(perfect) {
     running = false;
     stopReference();
     cancelAnimationFrame(rafId);
     resetStability();
     els.mic.textContent = `${LABELS[ORDER[activeIndex]]}が合いました`;
-    setFeedback("ok", "ぴったりです！", "合っています", true);
+    setSuccessFeedback(perfect);
   }
   function smoothPitch(frequency) {
     if (!smoothedFrequency) {
@@ -199,12 +211,13 @@
       if (now - voicedSince < 250) {
         resetStableDuration();
         setFeedback("listening", "音が落ち着くのを待っています", "アタックを除外中");
-      } else if (isInTune(cents)) {
+      } else if (isPassing(cents)) {
+        const perfect = isPerfect(cents);
         if (practice === "single") {
-          holdSingleSuccess();
+          holdSingleSuccess(perfect);
           return;
         }
-        acceptSequenceSuccess(now);
+        acceptSequenceSuccess(now, perfect);
       } else {
         resetStableDuration();
         const low = cents < 0;
@@ -219,9 +232,8 @@
     changing = true;
     stopReference();
     resetStability();
-    setFeedback("ok", "ぴったりです！", "合っています", true);
     if (practice === "single") {
-      holdSingleSuccess();
+      holdSingleSuccess(true);
       changing = false;
       return;
     }

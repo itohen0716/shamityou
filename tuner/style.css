@@ -385,6 +385,10 @@ select {
   margin-top: 17px;
 }
 
+.progress-panel[hidden] {
+  display: none !important;
+}
+
 .progress-step {
   display: grid;
   width: 54px;

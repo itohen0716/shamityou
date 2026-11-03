@@ -21,7 +21,8 @@
   const PERFECT_CENTS = judgementConfig?.perfectCents ?? judgementConfig?.toleranceCents ?? 7;
   const PASS_CENTS = judgementConfig?.passCents ?? PERFECT_CENTS;
   const NEAR_CENTS = 15;
-  const HOLD_MS = judgementConfig?.stableDurationMs ?? 1000;
+  const DEFAULT_HOLD_MS = judgementConfig?.stableDurationMs ?? 1000;
+  const THIRD_STRING_HOLD_MS = 700;
   const TRANSITION_MS = 1500;
   const PITCH_DROPOUT_GRACE_MS = 350;
   const MAX_STABLE_FRAME_MS = 80;
@@ -90,6 +91,10 @@
 
   function getTargetFrequency() {
     return getEntry().frequencies[currentStringIndex];
+  }
+
+  function getRequiredHoldDuration() {
+    return currentStringIndex === 2 ? THIRD_STRING_HOLD_MS : DEFAULT_HOLD_MS;
   }
 
   function frequencyToMidi(frequency) {
@@ -243,7 +248,7 @@
           stableDuration += Math.min(timestamp - lastInTuneAt, MAX_STABLE_FRAME_MS);
         }
         lastInTuneAt = timestamp;
-        if (stableDuration >= HOLD_MS) {
+        if (stableDuration >= getRequiredHoldDuration()) {
           void completeCurrentString();
         }
       }

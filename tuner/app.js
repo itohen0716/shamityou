@@ -25,6 +25,8 @@
   const THIRD_STRING_HOLD_MS = 700;
   const TRANSITION_MS = 1500;
   const PITCH_DROPOUT_GRACE_MS = 350;
+  const SINGLE_ATTACK_IGNORE_MS = 250;
+  const SINGLE_REARM_SILENCE_MS = 400;
   const MAX_STABLE_FRAME_MS = 80;
   const MIN_FREQUENCY = 70;
   const MAX_FREQUENCY = 900;
@@ -81,7 +83,10 @@
   let transitionLocked = false;
   let smoothedFrequency = null;
   let noPitchFrames = 0;
-  let singleSuccessLatched = false;
+  let singleResultLatched = false;
+  let singleSilenceStartedAt = 0;
+  let singleReadyForNextPluck = false;
+  let singleMeasurementStartedAt = 0;
   let sequenceComplete = false;
   let transitionVersion = 0;
 
@@ -179,7 +184,7 @@
   }
 
   function resetMeter(message = "マイクを開始してください") {
-    singleSuccessLatched = false;
+    resetSingleResultState();
     detectedNote.textContent = "—";
     frequencyValue.textContent = "--.-";
     meterNeedle.style.left = "50%";
@@ -193,6 +198,13 @@
     if (!transitionLocked) {
       setImage("shami-listening.png", "耳を澄まして音を聴くシャミ");
     }
+  }
+
+  function resetSingleResultState() {
+    singleResultLatched = false;
+    singleSilenceStartedAt = 0;
+    singleReadyForNextPluck = false;
+    singleMeasurementStartedAt = 0;
   }
 
   function resetMeasurementForSelection() {
@@ -216,7 +228,6 @@
     const note = frequencyToNote(frequency);
     const isLow = frequency < target;
 
-    singleSuccessLatched = false;
     resetStableDuration();
     smoothedFrequency = null;
     detectedNote.textContent = `${note.display}${note.octave}`;
@@ -252,7 +263,7 @@
 
     if (absolute <= PASS_CENTS) {
       const isPerfect = absolute <= PERFECT_CENTS;
-      if (mode === MODE_SINGLE) singleSuccessLatched = true;
+      if (mode === MODE_SINGLE) singleResultLatched = true;
       meterNeedle.style.background = "var(--success)";
       setGuide(isPerfect ? "ぴったりです！" : "合っています", "ok");
       setImage("shami-ok.png", "音が合って喜ぶシャミ");
@@ -269,7 +280,6 @@
       return;
     }
 
-    singleSuccessLatched = false;
     resetStableDuration();
     setImage("shami-listening.png", "耳を澄まして音を聴くシャミ");
 
@@ -280,6 +290,7 @@
       meterNeedle.style.background = "var(--pink-deep)";
       setGuide(absolute <= NEAR_CENTS ? "あと少し下げてね" : "音を下げてね", "high");
     }
+    if (mode === MODE_SINGLE) singleResultLatched = true;
   }
 
   async function completeCurrentString() {
@@ -419,14 +430,53 @@
 
     analyser.getFloatTimeDomainData(timeBuffer);
     const rawFrequency = detectPitch(timeBuffer, audioContext.sampleRate);
+    const hasValidPitch = rawFrequency >= MIN_FREQUENCY && rawFrequency <= MAX_FREQUENCY;
 
-    if (rawFrequency >= MIN_FREQUENCY && rawFrequency <= MAX_FREQUENCY) {
+    if (mode === MODE_SINGLE && singleResultLatched) {
+      if (!hasValidPitch) {
+        if (!singleSilenceStartedAt) singleSilenceStartedAt = timestamp;
+        if (timestamp - singleSilenceStartedAt >= SINGLE_REARM_SILENCE_MS) {
+          singleReadyForNextPluck = true;
+        }
+        rafId = window.requestAnimationFrame(analyse);
+        return;
+      }
+
+      if (!singleReadyForNextPluck) {
+        singleSilenceStartedAt = 0;
+        rafId = window.requestAnimationFrame(analyse);
+        return;
+      }
+
+      // 十分な無音のあとに再び音を検出したら、新しい一打として測り直す。
+      singleResultLatched = false;
+      singleSilenceStartedAt = 0;
+      singleReadyForNextPluck = false;
+      singleMeasurementStartedAt = timestamp;
+      smoothedFrequency = null;
+      resetStableDuration();
+    }
+
+    if (hasValidPitch) {
       noPitchFrames = 0;
       lastValidPitchAt = timestamp;
       const targetFrequency = getTargetFrequency();
 
+      if (mode === MODE_SINGLE) {
+        if (!singleMeasurementStartedAt) singleMeasurementStartedAt = timestamp;
+        if (timestamp - singleMeasurementStartedAt < SINGLE_ATTACK_IGNORE_MS) {
+          statusText.textContent = "音が落ち着くのを待っています…";
+          rafId = window.requestAnimationFrame(analyse);
+          return;
+        }
+      }
+
       if (!isFrequencyInTargetOctave(rawFrequency, targetFrequency)) {
         showOutOfOctave(rawFrequency, targetFrequency);
+        if (mode === MODE_SINGLE) {
+          singleResultLatched = true;
+          singleMeasurementStartedAt = 0;
+        }
         statusText.textContent = "目標と違う高さの音は合格になりません。";
         rafId = window.requestAnimationFrame(analyse);
         return;
@@ -438,14 +488,16 @@
           ? measuredFrequency
           : smoothedFrequency * 0.76 + measuredFrequency * 0.24;
       updateMeter(smoothedFrequency, timestamp);
+      if (mode === MODE_SINGLE && singleResultLatched) singleMeasurementStartedAt = 0;
       statusText.textContent = "";
     } else {
       noPitchFrames += 1;
       if (lastValidPitchAt && timestamp - lastValidPitchAt > PITCH_DROPOUT_GRACE_MS) {
         resetStableDuration();
         smoothedFrequency = null;
+        if (mode === MODE_SINGLE && !singleResultLatched) singleMeasurementStartedAt = 0;
       }
-      if (noPitchFrames > 12 && !transitionLocked && !singleSuccessLatched) {
+      if (noPitchFrames > 12 && !transitionLocked && !singleResultLatched) {
         setGuide("もう一度、糸を鳴らしてね");
         setImage("shami-listening.png", "耳を澄まして音を聴くシャミ");
       }

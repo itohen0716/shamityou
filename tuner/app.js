@@ -206,15 +206,29 @@
     return 1200 * Math.log2(frequency / target);
   }
 
-  function normalizePitchToTarget(frequency, target) {
-    let normalized = frequency;
+  function isFrequencyInTargetOctave(frequency, target) {
     const lowerBoundary = target / Math.SQRT2;
     const upperBoundary = target * Math.SQRT2;
+    return frequency >= lowerBoundary && frequency <= upperBoundary;
+  }
 
-    while (normalized < lowerBoundary) normalized *= 2;
-    while (normalized > upperBoundary) normalized /= 2;
+  function showOutOfOctave(frequency, target) {
+    const note = frequencyToNote(frequency);
+    const isLow = frequency < target;
 
-    return normalized;
+    singleSuccessLatched = false;
+    resetStableDuration();
+    smoothedFrequency = null;
+    detectedNote.textContent = `${note.display}${note.octave}`;
+    frequencyValue.textContent = frequency.toFixed(1);
+    centValue.textContent = "高さを確認";
+    meterNeedle.style.left = isLow ? "0%" : "100%";
+    meterNeedle.style.background = isLow ? "var(--blue-deep)" : "var(--pink-deep)";
+    setGuide(
+      isLow ? "音が低すぎます。糸を確認してね" : "音が高すぎます。糸を確認してね",
+      isLow ? "low" : "high"
+    );
+    setImage("shami-listening.png", "耳を澄まして音を聴くシャミ");
   }
 
   function resetStableDuration() {
@@ -229,7 +243,7 @@
     const clamped = Math.max(-50, Math.min(50, cents));
     const position = 50 + clamped;
 
-    detectedNote.textContent = note.display;
+    detectedNote.textContent = `${note.display}${note.octave}`;
     frequencyValue.textContent = frequency.toFixed(1);
     centValue.textContent = `${cents >= 0 ? "+" : ""}${cents.toFixed(1)} cent`;
     meterNeedle.style.left = `${position}%`;
@@ -409,7 +423,16 @@
     if (rawFrequency >= MIN_FREQUENCY && rawFrequency <= MAX_FREQUENCY) {
       noPitchFrames = 0;
       lastValidPitchAt = timestamp;
-      const measuredFrequency = normalizePitchToTarget(rawFrequency, getTargetFrequency());
+      const targetFrequency = getTargetFrequency();
+
+      if (!isFrequencyInTargetOctave(rawFrequency, targetFrequency)) {
+        showOutOfOctave(rawFrequency, targetFrequency);
+        statusText.textContent = "目標と違う高さの音は合格になりません。";
+        rafId = window.requestAnimationFrame(analyse);
+        return;
+      }
+
+      const measuredFrequency = rawFrequency;
       smoothedFrequency =
         smoothedFrequency === null
           ? measuredFrequency

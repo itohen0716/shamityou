@@ -70,6 +70,8 @@
   let rafId = null;
 
   let running = false;
+  let starting = false;
+  let startAttempt = 0;
   let mode = MODE_SEQUENCE;
   let currentStringIndex = 0;
   let stableDuration = 0;
@@ -79,6 +81,8 @@
   let smoothedFrequency = null;
   let noPitchFrames = 0;
   let singleSuccessLatched = false;
+  let sequenceComplete = false;
+  let transitionVersion = 0;
 
   function getEntry() {
     return MASTER.get(Number(baseStringSelect.value), tuningSelect.value);
@@ -186,6 +190,13 @@
     }
   }
 
+  function resetMeasurementForSelection() {
+    transitionVersion += 1;
+    sequenceComplete = false;
+    transitionLocked = false;
+    resetMeter(running ? "糸を鳴らしてください" : "マイクを開始してください");
+  }
+
   function centsFromTarget(frequency, target) {
     return 1200 * Math.log2(frequency / target);
   }
@@ -255,6 +266,7 @@
   async function completeCurrentString() {
     if (transitionLocked) return;
     transitionLocked = true;
+    const currentTransitionVersion = transitionVersion;
     resetStableDuration();
 
     const completed = currentStringIndex;
@@ -264,10 +276,8 @@
       setImage("shami-complete.png", "調弦が整って喜ぶシャミ");
       setGuide("三弦とも整いました！", "ok");
       centValue.textContent = "完了";
-      await new Promise((resolve) => window.setTimeout(resolve, 1200));
-      await stopTuner(false);
-      startButton.textContent = "もう一度はじめる";
       transitionLocked = false;
+      sequenceComplete = true;
       return;
     }
 
@@ -281,6 +291,8 @@
     }
 
     await new Promise((resolve) => window.setTimeout(resolve, TRANSITION_MS));
+
+    if (currentTransitionVersion !== transitionVersion || !running) return;
 
     currentStringIndex = nextIndex;
     stringSelect.value = String(currentStringIndex + 1);
@@ -381,7 +393,7 @@
   function analyse(timestamp) {
     if (!running || !analyser || !timeBuffer || !audioContext) return;
 
-    if (transitionLocked) {
+    if (transitionLocked || sequenceComplete) {
       rafId = window.requestAnimationFrame(analyse);
       return;
     }
@@ -415,7 +427,7 @@
   }
 
   async function startTuner() {
-    if (running || transitionLocked) return;
+    if (running || starting || transitionLocked) return;
 
     if (!navigator.mediaDevices?.getUserMedia) {
       statusText.textContent =
@@ -423,11 +435,14 @@
       return;
     }
 
+    const attempt = ++startAttempt;
+    starting = true;
+
     try {
       statusText.textContent = "マイクの使用許可を確認しています…";
       startButton.disabled = true;
 
-      mediaStream = await navigator.mediaDevices.getUserMedia({
+      const requestedStream = await navigator.mediaDevices.getUserMedia({
         audio: {
           echoCancellation: false,
           noiseSuppression: false,
@@ -436,8 +451,20 @@
         }
       });
 
+      if (attempt !== startAttempt) {
+        requestedStream.getTracks().forEach((track) => track.stop());
+        return;
+      }
+
+      mediaStream = requestedStream;
+
       audioContext = new AudioContext({ latencyHint: "interactive" });
       await audioContext.resume();
+
+      if (attempt !== startAttempt) {
+        await stopTuner(false);
+        return;
+      }
 
       const source = audioContext.createMediaStreamSource(mediaStream);
       analyser = audioContext.createAnalyser();
@@ -447,6 +474,7 @@
 
       timeBuffer = new Float32Array(analyser.fftSize);
       running = true;
+      sequenceComplete = false;
       startButton.disabled = true;
       startButton.textContent = "測定中";
       stopButton.disabled = false;
@@ -458,11 +486,17 @@
       statusText.textContent =
         "マイクを開始できませんでした。ブラウザのマイク許可を確認してください。";
       await stopTuner(true);
+    } finally {
+      if (attempt === startAttempt) starting = false;
     }
   }
 
   async function stopTuner(reset = true) {
+    startAttempt += 1;
+    transitionVersion += 1;
+    starting = false;
     running = false;
+    sequenceComplete = false;
 
     if (rafId !== null) {
       window.cancelAnimationFrame(rafId);
@@ -493,27 +527,39 @@
   }
 
   document.querySelectorAll(".mode-card").forEach((card) => {
-    card.addEventListener("click", async () => {
-      await stopTuner(true);
-      mode = card.dataset.mode === MODE_SINGLE ? MODE_SINGLE : MODE_SEQUENCE;
+    card.addEventListener("click", () => {
+      const nextMode = card.dataset.mode === MODE_SINGLE ? MODE_SINGLE : MODE_SEQUENCE;
+      if (mode === nextMode && !sequenceComplete) return;
+      mode = nextMode;
       updateModeUI();
+      resetMeasurementForSelection();
     });
   });
 
-  baseStringSelect.addEventListener("change", async () => {
-    await stopTuner(true);
+  baseStringSelect.addEventListener("change", () => {
+    if (mode === MODE_SEQUENCE) {
+      currentStringIndex = 0;
+      stringSelect.value = "1";
+      resetProgress();
+    }
     updateTargetUI();
+    resetMeasurementForSelection();
   });
 
-  tuningSelect.addEventListener("change", async () => {
-    await stopTuner(true);
+  tuningSelect.addEventListener("change", () => {
+    if (mode === MODE_SEQUENCE) {
+      currentStringIndex = 0;
+      stringSelect.value = "1";
+      resetProgress();
+    }
     updateTargetUI();
+    resetMeasurementForSelection();
   });
 
-  stringSelect.addEventListener("change", async () => {
-    await stopTuner(true);
+  stringSelect.addEventListener("change", () => {
     currentStringIndex = Number(stringSelect.value) - 1;
     updateTargetUI();
+    resetMeasurementForSelection();
   });
 
   startButton.addEventListener("click", () => void startTuner());
@@ -535,5 +581,6 @@
   });
 
   updateModeUI();
-  resetMeter();
+  resetMeter("マイクを準備しています…");
+  void startTuner();
 })());

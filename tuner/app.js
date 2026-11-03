@@ -18,7 +18,8 @@
   const MODE_SEQUENCE = "sequence";
   const MODE_SINGLE = "single";
   const judgementConfig = window.ShianJudgementConfig;
-  const IN_TUNE_CENTS = judgementConfig?.toleranceCents ?? 7;
+  const PERFECT_CENTS = judgementConfig?.perfectCents ?? judgementConfig?.toleranceCents ?? 7;
+  const PASS_CENTS = judgementConfig?.passCents ?? PERFECT_CENTS;
   const NEAR_CENTS = 15;
   const HOLD_MS = judgementConfig?.stableDurationMs ?? 1000;
   const TRANSITION_MS = 1500;
@@ -219,10 +220,11 @@
 
     const absolute = Math.abs(cents);
 
-    if (absolute <= IN_TUNE_CENTS) {
+    if (absolute <= PASS_CENTS) {
+      const isPerfect = absolute <= PERFECT_CENTS;
       if (mode === MODE_SINGLE) singleSuccessLatched = true;
       meterNeedle.style.background = "var(--success)";
-      setGuide("ぴったりです！", "ok");
+      setGuide(isPerfect ? "ぴったりです！" : "合っています", "ok");
       setImage("shami-ok.png", "音が合って喜ぶシャミ");
 
       if (mode === MODE_SEQUENCE && !transitionLocked) {
